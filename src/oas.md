@@ -3924,6 +3924,7 @@ Allows configuration of the supported OAuth Flows.
 | <a name="oauth-flows-client-credentials"></a>clientCredentials | [OAuth Flow Object](#oauth-flow-object) | Configuration for the OAuth Client Credentials flow. Previously called `application` in OpenAPI 2.0. |
 | <a name="oauth-flows-authorization-code"></a>authorizationCode | [OAuth Flow Object](#oauth-flow-object) | Configuration for the OAuth Authorization Code flow. Previously called `accessCode` in OpenAPI 2.0. |
 | <a name="oauth-flows-device-authorization"></s>deviceAuthorization| [OAuth Flow Object](#oauth-flow-object) | Configuration for the OAuth Device Authorization flow. |
+| <a name="oauth-flows-ciba"></a>ciba | [OAuth Flow Object](#oauth-flow-object) | Configuration for the OpenID Connect Client-Initiated Backchannel Authentication Flow. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -3935,11 +3936,14 @@ Configuration details for a supported OAuth Flow
 
 | Field Name | Type | Applies To | Description |
 | ---- | :----: | ---- | ---- |
-| <a name="oauth-flow-authorization-url"></a>authorizationUrl | `string` | `oauth2` (`"implicit"`, `"authorizationCode"`) | **REQUIRED**. The authorization URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
+| <a name="oauth-flow-authorization-url"></a>authorizationUrl | `string` | `oauth2` (`"implicit"`, `"authorizationCode"`, `"ciba"`) | **REQUIRED**. The authorization URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
 | <a name="oauth-flow-device-authorization-url"></s>deviceAuthorizationUrl | `string` | `oauth2` (`"deviceAuthorization"`) | **REQUIRED**. The device authorization URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
-| <a name="oauth-flow-token-url"></a>tokenUrl | `string` | `oauth2` (`"password"`, `"clientCredentials"`, `"authorizationCode"`, `"deviceAuthorization"`) | **REQUIRED**. The token URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
+| <a name="oauth-flow-token-url"></a>tokenUrl | `string` | `oauth2` (`"password"`, `"clientCredentials"`, `"authorizationCode"`, `"deviceAuthorization"`, `"ciba"`) | **REQUIRED**. The token URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
 | <a name="oauth-flow-refresh-url"></a>refreshUrl | `string` | `oauth2` | The URL to be used for obtaining refresh tokens. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
 | <a name="oauth-flow-scopes"></a>scopes | Map[`string`, `string`] | `oauth2` | **REQUIRED**. The available scopes for the OAuth2 security scheme. A map between the scope name and a short description for it. The map MAY be empty. |
+| <a name="oauth-flow-ciba-delivery-modes"></a>cibaDeliveryModes | Array[`string`] | `oauth2` (`"ciba"`) | **REQUIRED**. JSON array containing one or more of the following values: `poll`, `ping`, and `push`. |
+| <a name="oauth-flow-ciba-signing-algs"></a>cibaSigningAlgs | Array[`string`] | `oauth2` (`"ciba"`) |  JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP (OpenIdConnect Provider) for signed authentication requests |
+| <a name="oauth-flow-ciba-user-code"></a>cibaUserCode | `boolean` | `oauth2` (`"ciba"`) |  Boolean value specifying whether the OP supports the use of the user_code parameter, with true indicating support. If omitted, the default value is false. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -3963,6 +3967,15 @@ This object MAY be extended with [Specification Extensions](#specification-exten
         "write:pets": "modify pets in your account",
         "read:pets": "read your pets"
       }
+    },
+    "ciba": {
+      "authorizationUrl": "https://example.com/api/oauth/dialog",
+      "tokenUrl": "https://example.com/api/oauth/token",
+      "scopes": {
+        "write:pets": "modify pets in your account",
+        "read:pets": "read your pets"
+      },
+      "cibaDeliveryModes": ["poll"]
     }
   }
 }
