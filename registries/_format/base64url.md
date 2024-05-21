@@ -1,15 +1,21 @@
 ---
 owner: baywet
 issue:
-description: Binary data encoded as a url-safe string as defined in [RFC4648](https://www.rfc-editor.org/rfc/rfc4648#section-5)
+description: Binary data encoded as a url-safe string.
+specifications:
+  - "[RFC4648 §5](https://www.rfc-editor.org/rfc/rfc4648#section-5)"
 base_type: string
 layout: default
-deprecated_note: '3.1'
-remarks: "When using OpenAPI 3.1 it's recommended not to use this format and instead use [`contentEncoding` with a value of `base64url`](https://json-schema.org/draft/2020-12/json-schema-validation.html#name-contentencoding)."
+deprecated:
+  in: '3.1'
+  replacement: "`{contentEncoding: base64url}`"
+  specifications:
+    - "[JSON Schema Validation draft 2020-12 §8.3](https://json-schema.org/draft/2020-12/json-schema-validation.html#name-contentencoding)"
+    - "[RFC4648 §5](https://www.rfc-editor.org/rfc/rfc4648#section-5)"
 ---
 
 {% capture summary %}
-The `{{page.slug}}` format is binary data encoded as a url-safe string as defined in [RFC4648](https://www.rfc-editor.org/rfc/rfc4648#section-5).
+The `{{page.slug}}` format is binary data encoded as a url-safe string as defined in {{page.specifications | join:', ' }}.
 {% endcapture %}
 
 {% include format-entry.md summary=summary %}

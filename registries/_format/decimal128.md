@@ -5,7 +5,6 @@ description: A decimal floating-point number with 34 significant decimal digits
 base_type: [string, number]
 layout: default
 ---
-
 {% capture summary %}
 The `{{page.slug}}` format represents a [128-bit decimal floating-point number](https://en.wikipedia.org/wiki/Decimal128_floating-point_format) as defined by IEEE 754 2008 and ISO/IEC/IEEE 60559:2011.
 
