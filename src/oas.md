@@ -75,7 +75,7 @@ By convention, the Swagger specification file is named `swagger.json`.
 
 ### Data Types
 
-Primitive data types in the Swagger Specification are based on the types supported by the [JSON-Schema Draft 4](http://json-schema.org/latest/json-schema-core.html#anchor8). Models are described using the [Schema Object](#schemaObject) which is a subset of JSON Schema Draft 4.
+Primitive data types in the Swagger Specification are based on the types supported by the [JSON-Schema Draft 4](https://tools.ietf.org/html/draft-zyp-json-schema-04#section-3.5). Models are described using the [Schema Object](#schemaObject) which is a subset of JSON Schema Draft 4.
 
 An additional primitive data type `"file"` is used by the [Parameter Object](#parameterObject) and the [Response Object](#responseObject) to set the parameter type or the response as being a file.
 
@@ -318,7 +318,7 @@ Field Name | Type | Description
 <a name="pathItemOptions"></a>options | [Operation Object](#operationObject) | A definition of a OPTIONS operation on this path.
 <a name="pathItemHead"></a>head | [Operation Object](#operationObject) | A definition of a HEAD operation on this path.
 <a name="pathItemPatch"></a>patch | [Operation Object](#operationObject) | A definition of a PATCH operation on this path.
-<a name="pathItemParameters"></a>parameters | [[Parameter Object](#parameterObject) <span>&#124;</span> [Reference Object](#referenceObject)] | A list of parameters that are applicable for all the operations described under this path. These parameters can be overridden at the operation level, but cannot be removed there. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameterName) and [location](#parameterIn). The list can use the [Reference Object](#referenceObject) to link to parameters that are defined at the [Swagger Object's parameters](#swaggerParameters). There can be one "body" parameter at most.
+<a name="pathItemParameters"></a>parameters | [[Parameter Object](#parameterObject) \| [Reference Object](#referenceObject)] | A list of parameters that are applicable for all the operations described under this path. These parameters can be overridden at the operation level, but cannot be removed there. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameterName) and [location](#parameterIn). The list can use the [Reference Object](#referenceObject) to link to parameters that are defined at the [Swagger Object's parameters](#swaggerParameters). There can be one "body" parameter at most.
 
 ##### Patterned Fields
 
@@ -417,7 +417,7 @@ Field Name | Type | Description
 <a name="operationId"></a>operationId | `string` | Unique string used to identify the operation. The id MUST be unique among all operations described in the API. Tools and libraries MAY use the operationId to uniquely identify an operation, therefore, it is recommended to follow common programming naming conventions.
 <a name="operationConsumes"></a>consumes | [`string`] | A list of MIME types the operation can consume. This overrides the [`consumes`](#swaggerConsumes) definition at the Swagger Object. An empty value MAY be used to clear the global definition. Value MUST be as described under [Mime Types](#mimeTypes).
 <a name="operationProduces"></a>produces | [`string`] | A list of MIME types the operation can produce. This overrides the [`produces`](#swaggerProduces) definition at the Swagger Object. An empty value MAY be used to clear the global definition. Value MUST be as described under [Mime Types](#mimeTypes).
-<a name="operationParameters"></a>parameters | [[Parameter Object](#parameterObject) <span>&#124;</span> [Reference Object](#referenceObject)] | A list of parameters that are applicable for this operation. If a parameter is already defined at the [Path Item](#pathItemParameters), the new definition will override it, but can never remove it. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameterName) and [location](#parameterIn). The list can use the [Reference Object](#referenceObject) to link to parameters that are defined at the [Swagger Object's parameters](#swaggerParameters). There can be one "body" parameter at most.
+<a name="operationParameters"></a>parameters | [[Parameter Object](#parameterObject) \| [Reference Object](#referenceObject)] | A list of parameters that are applicable for this operation. If a parameter is already defined at the [Path Item](#pathItemParameters), the new definition will override it, but can never remove it. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameterName) and [location](#parameterIn). The list can use the [Reference Object](#referenceObject) to link to parameters that are defined at the [Swagger Object's parameters](#swaggerParameters). There can be one "body" parameter at most.
 <a name="operationResponses"></a>responses | [Responses Object](#responsesObject) | **Required.** The list of possible responses as they are returned from executing this operation.
 <a name="operationSchemes"></a>schemes | [`string`] | The transfer protocol for the operation. Values MUST be from the list: `"http"`, `"https"`, `"ws"`, `"wss"`. The value overrides the Swagger Object [`schemes`](#swaggerSchemes) definition. 
 <a name="operationDeprecated"></a>deprecated | `boolean` | Declares this operation to be deprecated. Usage of the declared operation should be refrained. Default value is `false`.
@@ -596,19 +596,19 @@ Field Name | Type | Description
 <a name="parameterAllowEmptyValue"/>allowEmptyValue | `boolean` | Sets the ability to pass empty-valued parameters. This is valid only for either `query` or `formData` parameters and allows you to send a parameter with a name only or  an empty value. Default value is `false`.
 <a name="parameterItems"></a>items | [Items Object](#itemsObject) | **Required if [`type`](#parameterType) is "array".** Describes the type of items in the array.
 <a name="parameterCollectionFormat"></a>collectionFormat | `string` | Determines the format of the array if type array is used. Possible values are: <ul><li>`csv` - comma separated values `foo,bar`. <li>`ssv` - space separated values `foo bar`. <li>`tsv` - tab separated values `foo\tbar`. <li>`pipes` - pipe separated values <code>foo&#124;bar</code>. <li>`multi` - corresponds to multiple parameter instances instead of multiple values for a single instance `foo=bar&foo=baz`. This is valid only for parameters [`in`](#parameterIn) "query" or "formData". </ul> Default value is `csv`.
-<a name="parameterDefault"></a>default | * | Declares the value of the parameter that the server will use if none is provided, for example a "count" to control the number of results per page might default to 100 if not supplied by the client in the request. (Note: "default" has no meaning for required parameters.)  See http://json-schema.org/latest/json-schema-validation.html#anchor101. Unlike JSON Schema this value MUST conform to the defined [`type`](#parameterType) for this parameter.
-<a name="parameterMaximum"></a>maximum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
-<a name="parameterExclusiveMaximum"></a>exclusiveMaximum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
-<a name="parameterMinimum"></a>minimum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
-<a name="parameterExclusiveMinimum"></a>exclusiveMinimum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
-<a name="parameterMaxLength"></a>maxLength | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor26.
-<a name="parameterMinLength"></a>minLength | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor29.
-<a name="parameterPattern"></a>pattern | `string` | See http://json-schema.org/latest/json-schema-validation.html#anchor33.
-<a name="parameterMaxItems"></a>maxItems | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor42.
-<a name="parameterMinItems"></a>minItems | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor45.
-<a name="parameterUniqueItems"></a>uniqueItems | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor49.
-<a name="parameterEnum"></a>enum | [*] | See http://json-schema.org/latest/json-schema-validation.html#anchor76.
-<a name="parameterMultipleOf"></a>multipleOf | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor14.
+<a name="parameterDefault"></a>default | * | Declares the value of the parameter that the server will use if none is provided, for example a "count" to control the number of results per page might default to 100 if not supplied by the client in the request. (Note: "default" has no meaning for required parameters.)  See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-6.2. Unlike JSON Schema this value MUST conform to the defined [`type`](#parameterType) for this parameter.
+<a name="parameterMaximum"></a>maximum | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.2.
+<a name="parameterExclusiveMaximum"></a>exclusiveMaximum | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.2.
+<a name="parameterMinimum"></a>minimum | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.3.
+<a name="parameterExclusiveMinimum"></a>exclusiveMinimum | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.3.
+<a name="parameterMaxLength"></a>maxLength | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.1.
+<a name="parameterMinLength"></a>minLength | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.2.
+<a name="parameterPattern"></a>pattern | `string` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.3.
+<a name="parameterMaxItems"></a>maxItems | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.2.
+<a name="parameterMinItems"></a>minItems | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.3.
+<a name="parameterUniqueItems"></a>uniqueItems | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.4.
+<a name="parameterEnum"></a>enum | [*] | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.5.1.
+<a name="parameterMultipleOf"></a>multipleOf | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.1.
 
 
 ##### Patterned Fields
@@ -776,19 +776,19 @@ Field Name | Type | Description
 <a name="itemsFormat"></a>format | `string` | The extending format for the previously mentioned [`type`](#parameterType). See [Data Type Formats](#dataTypeFormat) for further details.
 <a name="itemsItems"></a>items | [Items Object](#itemsObject) | **Required if [`type`](#itemsType) is "array".** Describes the type of items in the array.
 <a name="itemsCollectionFormat"></a>collectionFormat | `string` | Determines the format of the array if type array is used. Possible values are: <ul><li>`csv` - comma separated values `foo,bar`. <li>`ssv` - space separated values `foo bar`. <li>`tsv` - tab separated values `foo\tbar`. <li>`pipes` - pipe separated values <code>foo&#124;bar</code>. </ul> Default value is `csv`.
-<a name="itemsDefault"></a>default | * | Declares the value of the item that the server will use if none is provided. (Note: "default" has no meaning for required items.) See http://json-schema.org/latest/json-schema-validation.html#anchor101. Unlike JSON Schema this value MUST conform to the defined [`type`](#itemsType) for the data type.
-<a name="itemsMaximum"></a>maximum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
-<a name="itemsMaximum"></a>exclusiveMaximum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
-<a name="itemsMinimum"></a>minimum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
-<a name="itemsExclusiveMinimum"></a>exclusiveMinimum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
-<a name="itemsMaxLength"></a>maxLength | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor26.
-<a name="itemsMinLength"></a>minLength | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor29.
-<a name="itemsPattern"></a>pattern | `string` | See http://json-schema.org/latest/json-schema-validation.html#anchor33.
-<a name="itemsMaxItems"></a>maxItems | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor42.
-<a name="itemsMinItems"></a>minItems | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor45.
-<a name="itemsUniqueItems"></a>uniqueItems | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor49.
-<a name="itemsEnum"></a>enum | [*] | See http://json-schema.org/latest/json-schema-validation.html#anchor76.
-<a name="itemsMultipleOf"></a>multipleOf | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor14.
+<a name="itemsDefault"></a>default | * | Declares the value of the item that the server will use if none is provided. (Note: "default" has no meaning for required items.) See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-6.2. Unlike JSON Schema this value MUST conform to the defined [`type`](#itemsType) for the data type.
+<a name="itemsMaximum"></a>maximum | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.2.
+<a name="itemsMaximum"></a>exclusiveMaximum | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.2.
+<a name="itemsMinimum"></a>minimum | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.3.
+<a name="itemsExclusiveMinimum"></a>exclusiveMinimum | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.3.
+<a name="itemsMaxLength"></a>maxLength | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.1.
+<a name="itemsMinLength"></a>minLength | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.2.
+<a name="itemsPattern"></a>pattern | `string` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.3.
+<a name="itemsMaxItems"></a>maxItems | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.2.
+<a name="itemsMinItems"></a>minItems | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.3.
+<a name="itemsUniqueItems"></a>uniqueItems | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.4.
+<a name="itemsEnum"></a>enum | [*] | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.5.1.
+<a name="itemsMultipleOf"></a>multipleOf | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.1.
 
 ##### Patterned Objects 
 
@@ -844,12 +844,12 @@ The `Responses Object` MUST contain at least one response code, and it SHOULD be
 ##### Fixed Fields
 Field Name | Type | Description
 ---|:---:|---
-<a name="responsesDefault"></a>default | [Response Object](#responseObject) <span>&#124;</span> [Reference Object](#referenceObject) | The documentation of responses other than the ones declared for specific HTTP response codes. It can be used to cover undeclared responses. [Reference Object](#referenceObject) can be used to link to a response that is defined at the [Swagger Object's responses](#swaggerResponses) section.
+<a name="responsesDefault"></a>default | [Response Object](#responseObject) \| [Reference Object](#referenceObject) | The documentation of responses other than the ones declared for specific HTTP response codes. It can be used to cover undeclared responses. [Reference Object](#referenceObject) can be used to link to a response that is defined at the [Swagger Object's responses](#swaggerResponses) section.
 
 ##### Patterned Fields
 Field Pattern | Type | Description
 ---|:---:|---
-<a name="responsesCode"></a>{[HTTP Status Code](#httpCodes)} | [Response Object](#responseObject) <span>&#124;</span> [Reference Object](#referenceObject) | Any [HTTP status code](#httpCodes) can be used as the property name (one property per HTTP status code). Describes the expected response for that HTTP status code.  [Reference Object](#referenceObject) can be used to link to a response that is defined at the [Swagger Object's responses](#swaggerResponses) section.
+<a name="responsesCode"></a>{[HTTP Status Code](#httpCodes)} | [Response Object](#responseObject) \| [Reference Object](#referenceObject) | Any [HTTP status code](#httpCodes) can be used as the property name (one property per HTTP status code). Describes the expected response for that HTTP status code.  [Reference Object](#referenceObject) can be used to link to a response that is defined at the [Swagger Object's responses](#swaggerResponses) section.
 <a name="responsesExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 
@@ -1080,19 +1080,19 @@ Field Name | Type | Description
 <a name="headerFormat"></a>format | `string` | The extending format for the previously mentioned [`type`](#stType). See [Data Type Formats](#dataTypeFormat) for further details.
 <a name="headerItems"></a>items | [Items Object](#itemsObject) | **Required if [`type`](#stType) is "array".** Describes the type of items in the array.
 <a name="headerCollectionFormat"></a>collectionFormat | `string` | Determines the format of the array if type array is used. Possible values are: <ul><li>`csv` - comma separated values `foo,bar`. <li>`ssv` - space separated values `foo bar`. <li>`tsv` - tab separated values `foo\tbar`. <li>`pipes` - pipe separated values <code>foo&#124;bar</code>. </ul> Default value is `csv`.
-<a name="headerDefault"></a>default | * | Declares the value of the header that the server will use if none is provided. (Note: "default" has no meaning for required headers.) See http://json-schema.org/latest/json-schema-validation.html#anchor101. Unlike JSON Schema this value MUST conform to the defined [`type`](#headerDefault) for the header.
-<a name="headerMaximum"></a>maximum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
-<a name="headerMaximum"></a>exclusiveMaximum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
-<a name="headerMinimum"></a>minimum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
-<a name="headerExclusiveMinimum"></a>exclusiveMinimum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
-<a name="headerMaxLength"></a>maxLength | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor26.
-<a name="headerMinLength"></a>minLength | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor29.
-<a name="headerPattern"></a>pattern | `string` | See http://json-schema.org/latest/json-schema-validation.html#anchor33.
-<a name="headerMaxItems"></a>maxItems | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor42.
-<a name="headerMinItems"></a>minItems | `integer` | See http://json-schema.org/latest/json-schema-validation.html#anchor45.
-<a name="headerUniqueItems"></a>uniqueItems | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor49.
-<a name="headerEnum"></a>enum | [*] | See http://json-schema.org/latest/json-schema-validation.html#anchor76.
-<a name="headerMultipleOf"></a>multipleOf | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor14.
+<a name="headerDefault"></a>default | * | Declares the value of the header that the server will use if none is provided. (Note: "default" has no meaning for required headers.) See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-6.2. Unlike JSON Schema this value MUST conform to the defined [`type`](#headerDefault) for the header.
+<a name="headerMaximum"></a>maximum | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.2.
+<a name="headerMaximum"></a>exclusiveMaximum | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.2.
+<a name="headerMinimum"></a>minimum | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.3.
+<a name="headerExclusiveMinimum"></a>exclusiveMinimum | `boolean` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.3.
+<a name="headerMaxLength"></a>maxLength | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.1.
+<a name="headerMinLength"></a>minLength | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.2.
+<a name="headerPattern"></a>pattern | `string` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.2.3.
+<a name="headerMaxItems"></a>maxItems | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.2.
+<a name="headerMinItems"></a>minItems | `integer` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.3.
+<a name="headerUniqueItems"></a>uniqueItems | `boolean` | https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.3.4.
+<a name="headerEnum"></a>enum | [*] | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.5.1.
+<a name="headerMultipleOf"></a>multipleOf | `number` | See https://tools.ietf.org/html/draft-fge-json-schema-validation-00#section-5.1.1.
 
 ##### Patterned Objects 
 
@@ -1150,7 +1150,7 @@ description: Pets operations
 
 A simple object to allow referencing other definitions in the specification. It can be used to reference parameters and responses that are defined at the top level for reuse.
 
-The Reference Object is a [JSON Reference](http://tools.ietf.org/html/draft-pbryan-zyp-json-ref-02) that uses a [JSON Pointer](http://tools.ietf.org/html/rfc6901) as its value. For this specification, only [canonical dereferencing](http://json-schema.org/latest/json-schema-core.html#anchor27) is supported.
+The Reference Object is a [JSON Reference](http://tools.ietf.org/html/draft-pbryan-zyp-json-ref-02) that uses a [JSON Pointer](http://tools.ietf.org/html/rfc6901) as its value. For this specification, only [canonical dereferencing](https://tools.ietf.org/html/draft-zyp-json-schema-04#section-7.2.3) is supported.
 
 ##### Fixed Fields
 Field Name | Type | Description
@@ -1195,7 +1195,7 @@ $ref: 'definitions.yaml#/Pet'
 
 The Schema Object allows the definition of input and output data types. These types can be objects, but also primitives and arrays. This object is based on the [JSON Schema Specification Draft 4](http://json-schema.org/) and uses a predefined subset of it. On top of this subset, there are extensions provided by this specification to allow for more complete documentation.
 
-Further information about the properties can be found in [JSON Schema Core](http://json-schema.org/latest/json-schema-core.html) and [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html). Unless stated otherwise, the property definitions follow the JSON Schema specification as referenced here.
+Further information about the properties can be found in [JSON Schema Core](https://tools.ietf.org/html/draft-zyp-json-schema-04) and [JSON Schema Validation](https://tools.ietf.org/html/draft-fge-json-schema-validation-00). Unless stated otherwise, the property definitions follow the JSON Schema specification as referenced here.
 
 The following properties are taken directly from the JSON Schema definition and follow the same specifications:
 - $ref - As a [JSON Reference](https://tools.ietf.org/html/draft-pbryan-zyp-json-ref-03)
@@ -1872,7 +1872,7 @@ Affecting both internal and external names:
     },
     "xml": {
       "name": "aliens",
-      "wrapped": false
+      "wrapped": true
     }
   }
 }
@@ -1887,7 +1887,7 @@ animals:
       name: animal
   xml:
     name: aliens
-    wrapped: false
+    wrapped: true
 ```
 
 ```xml
