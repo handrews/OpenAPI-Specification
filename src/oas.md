@@ -78,20 +78,22 @@ Primitive data types in the Swagger Specification are based on the types support
 
 An additional primitive data type `"file"` is used by the [Parameter Object](#parameterObject) and the [Response Object](#responseObject) to set the parameter type or the response as being a file.
 
-<a name="dataTypeFormat"></a>Primitives have an optional modifier property `format`. Swagger uses several known formats to more finely define the data type being used. However, the `format` property is an open `string`-valued property, and can have any value to support documentation needs. Formats such as `"email"`, `"uuid"`, etc., can be used even though they are not defined by this specification. The formats defined by the Swagger Specification are:
+<a name="dataTypeFormat"></a>Primitives have an optional modifier property `format`. Swagger uses several known formats to more finely define the data type being used. However, the `format` property is an open `string`-valued property, and can have any value to support documentation needs. Formats such as `"email"`, `"uuid"`, etc., can be used even though they are not defined by this specification. Types that are not accompanied by a `format` property follow their definition from the JSON Schema (except for `file` type which is defined above). The formats defined by the Swagger Specification are:
 
 
 Common Name | [`type`](#dataTypeType) | [`format`](#dataTypeFormat) | Comments
 ----------- | ------ | -------- | --------
 integer | `integer` | `int32` | signed 32 bits
 long | `integer` | `int64` | signed 64 bits
-float | `number` | `float` | 
-double | `number` | `double` |
-string | `string` | |
-byte | `string` | `byte` |
-boolean | `boolean` | |
+float | `number` | `float` | |
+double | `number` | `double` | |
+string | `string` | | |
+byte | `string` | `byte` | base64 encoded characters
+binary | `string` | `binary` | any sequence of octets
+boolean | `boolean` | | |
 date | `string` | `date` | As defined by `full-date` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
 dateTime | `string` | `date-time` | As defined by `date-time` - [RFC3339](http://xml2rfc.ietf.org/public/rfc/html/rfc3339.html#anchor14)
+password | `string` | `password` | Used to hint UIs the input needs to be obscured.
 
 ### Schema
 
@@ -107,7 +109,7 @@ Field Name | Type | Description
 <a name="swaggerInfo"></a>info | [Info Object](#infoObject) | **Required.** Provides metadata about the API. The metadata can be used by the clients if needed.
 <a name="swaggerHost"></a>host | `string` | The host (name or ip) serving the API. This MUST be the host only and does not include the scheme nor sub-paths. It MAY include a port. If the `host` is not included, the host serving the documentation is to be used (including the port). The `host` does not support [path templating](#pathTemplating).
 <a name="swaggerBasePath"></a>basePath | `string` | The base path on which the API is served, which is relative to the [`host`](#swaggerHost). If it is not included, the API is served directly under the `host`. The value MUST start with a leading slash (`/`). The `basePath` does not support [path templating](#pathTemplating). 
-<a name="swaggerSchemes"></a>schemes | [`string`] | The transfer protocol of the API. Values MUST be from the list: `"http"`, `"https"`, `"ws"`, `"wss"`. If the `schemes` is not included, the default scheme to be used is the one used to access the specification.
+<a name="swaggerSchemes"></a>schemes | [`string`] | The transfer protocol of the API. Values MUST be from the list: `"http"`, `"https"`, `"ws"`, `"wss"`. If the `schemes` is not included, the default scheme to be used is the one used to access the Swagger definition itself.
 <a name="swaggerConsumes"></a>consumes | [`string`] | A list of MIME types the APIs can consume. This is global to all APIs but can be overridden on specific API calls. Value MUST be as described under [Mime Types](#mimeTypes).
 <a name="swaggerProduces"></a>produces | [`string`] | A list of MIME types the APIs can produce. This is global to all APIs but can be overridden on specific API calls. Value MUST be as described under [Mime Types](#mimeTypes).
 <a name="swaggerPaths"></a>paths | [Paths Object](#pathsObject) | **Required.** The available paths and operations for the API.
@@ -119,6 +121,11 @@ Field Name | Type | Description
 <a name="swaggerTags"></a>tags | [[Tag Object](#tagObject)] | A list of tags used by the specification with additional metadata. The order of the tags can be used to reflect on their order by the parsing tools. Not all tags that are used by the [Operation Object](#operationObject) must be declared. The tags that are not declared may be organized randomly or based on the tools' logic. Each tag name in the list MUST be unique.
 <a name="swaggerExternalDocs"></a>externalDocs | [External Documentation Object](#externalDocumentationObject) | Additional external documentation.
 
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="swaggerExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 #### <a name="infoObject"></a>Info Object
 
@@ -133,13 +140,13 @@ Field Name | Type | Description
 <a name="infoTermsOfService"></a>termsOfService | `string` | The Terms of Service for the API.
 <a name="infoContact"></a>contact | [Contact Object](#contactObject) | The contact information for the exposed API.
 <a name="infoLicense"></a>license | [License Object](#licenseObject) | The license information for the exposed API.
-<a name="infoVersion"></a>version | `string` | **Required** Provides the version of the application API (not to be confused by the specification version).
+<a name="infoVersion"></a>version | `string` | **Required** Provides the version of the application API (not to be confused with the specification version).
 
 ##### Patterned Objects 
 
 Field Pattern | Type | Description
 ---|:---:|---
-<a name="operationExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
+<a name="infoExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ##### Info Object Example:
 
@@ -187,6 +194,12 @@ Field Name | Type | Description
 <a name="contactUrl"></a>url | `string` | The URL pointing to the contact information. MUST be in the format of a URL.
 <a name="contactEmail"></a>email | `string` | The email address of the contact person/organization. MUST be in the format of an email address.
 
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="contactExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
+
 ##### Contact Object Example:
 
 ```js
@@ -213,6 +226,12 @@ Field Name | Type | Description
 ---|:---:|---
 <a name="licenseName"></a>name | `string` | **Required.** The license name used for the API.
 <a name="licenseUrl"></a>url | `string` | A URL to the license used for the API. MUST be in the format of a URL.
+
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="licenseExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ##### License Object Example:
 
@@ -273,7 +292,7 @@ Field Pattern | Type | Description
     produces:
     - application/json
     responses:
-      200:
+      '200':
         description: A list of pets.
         schema:
           type: array
@@ -361,7 +380,7 @@ get:
   - application/json
   - text/html
   responses:
-    200:
+    '200':
       description: pet response
       schema:
         type: array
@@ -394,7 +413,7 @@ Field Name | Type | Description
 <a name="operationSummary"></a>summary | `string` | A short summary of what the operation does. For maximum readability in the swagger-ui, this field SHOULD be less than 120 characters.
 <a name="operationDescription"></a>description | `string` | A verbose explanation of the operation behavior. [GFM syntax](https://help.github.com/articles/github-flavored-markdown) can be used for rich text representation.
 <a name="operationExternalDocs"></a>externalDocs | [External Documentation Object](#externalDocumentationObject) | Additional external documentation for this operation.
-<a name="operationId"></a>operationId | `string` | A friendly name for the operation. The id MUST be unique among all operations described in the API. Tools and libraries MAY use the operation id to uniquely identify an operation.
+<a name="operationId"></a>operationId | `string` | Unique string used to identify the operation. The id MUST be unique among all operations described in the API. Tools and libraries MAY use the operationId to uniquely identify an operation, therefore, it is recommended to follow common programming naming conventions.
 <a name="operationConsumes"></a>consumes | [`string`] | A list of MIME types the operation can consume. This overrides the [`consumes`](#swaggerConsumes) definition at the Swagger Object. An empty value MAY be used to clear the global definition. Value MUST be as described under [Mime Types](#mimeTypes).
 <a name="operationProduces"></a>produces | [`string`] | A list of MIME types the operation can produce. This overrides the [`produces`](#swaggerProduces) definition at the Swagger Object. An empty value MAY be used to clear the global definition. Value MUST be as described under [Mime Types](#mimeTypes).
 <a name="operationParameters"></a>parameters | [[Parameter Object](#parameterObject) <span>&#124;</span> [Reference Object](#referenceObject)] | A list of parameters that are applicable for this operation. If a parameter is already defined at the [Path Item](#pathItemParameters), the new definition will override it, but can never remove it. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameterName) and [location](#parameterIn). The list can use the [Reference Object](#referenceObject) to link to parameters that are defined at the [Swagger Object's parameters](#swaggerParameters). There can be one "body" parameter at most.
@@ -496,9 +515,9 @@ parameters:
   required: false
   type: string
 responses:
-  200:
+  '200':
     description: Pet updated.
-  405:
+  '405':
     description: Invalid input
 security:
 - petstore_auth:
@@ -517,6 +536,12 @@ Field Name | Type | Description
 ---|:---:|---
 <a name="externalDocDescription"></a>description | `string` | A short description of the target documentation. [GFM syntax](https://help.github.com/articles/github-flavored-markdown) can be used for rich text representation.
 <a name="externalDocUrl"></a>url | `string` | **Required.** The URL for the target documentation. Value MUST be in the format of a URL.
+
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="externalDocExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ##### External Documentation Object Example
 
@@ -543,7 +568,7 @@ There are five possible parameter types.
 * Query - Parameters that are appended to the URL. For example, in `/items?id=###`, the query parameter is `id`.
 * Header - Custom headers that are expected as part of the request.
 * Body - The payload that's appended to the HTTP request. Since there can only be one payload, there can only be *one* body parameter. The name of the body parameter has no effect on the parameter itself and is used for documentation purposes only. Since Form parameters are also in the payload, body and form parameters cannot exist together for the same operation.
-* Form - Used to describe the payload of an HTTP request when either `application/x-www-form-urlencoded` or `multipart/form-data` are used as the content type of the request (in Swagger's definition, the [`consumes`](#operationConsumes) property of an operation). This is the only parameter type that can be used to send files, thus supporting the `file` type. Since form parameters are sent in the payload, they cannot be declared together with a body parameter for the same operation. Form parameters have a different format based on the content-type used (for further details, consult http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4):
+* Form - Used to describe the payload of an HTTP request when either `application/x-www-form-urlencoded`, `multipart/form-data` or both are used as the content type of the request (in Swagger's definition, the [`consumes`](#operationConsumes) property of an operation). This is the only parameter type that can be used to send files, thus supporting the `file` type. Since form parameters are sent in the payload, they cannot be declared together with a body parameter for the same operation. Form parameters have a different format based on the content-type used (for further details, consult http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4):
   * `application/x-www-form-urlencoded` - Similar to the format of Query parameters but as a payload. For example, `foo=1&bar=swagger` - both `foo` and `bar` are form parameters. This is normally used for simple parameters that are being transferred.
   * `multipart/form-data` - each parameter takes a section in the payload with an internal header. For example, for the header `Content-Disposition: form-data; name="submit-name"` the name of the parameter is `submit-name`. This type of form parameters is more commonly used for file transfers.
 
@@ -565,12 +590,12 @@ If [`in`](#parameterIn) is any value other than `"body"`:
 
 Field Name | Type | Description
 ---|:---:|---
-<a name="parameterType"></a>type | `string` | **Required.** The type of the parameter. Since the parameter is not located at the request body, it is limited to simple types (that is, not an object). The value MUST be one of `"string"`, `"number"`, `"integer"`, `"boolean"`, `"array"` or `"file"`. If `type` is `"file"`, the [`consumes`](#operationConsumes) MUST be either `"multipart/form-data"` or `" application/x-www-form-urlencoded"` and the parameter MUST be [`in`](#parameterIn) `"formData"`.
+<a name="parameterType"></a>type | `string` | **Required.** The type of the parameter. Since the parameter is not located at the request body, it is limited to simple types (that is, not an object). The value MUST be one of `"string"`, `"number"`, `"integer"`, `"boolean"`, `"array"` or `"file"`. If `type` is `"file"`, the [`consumes`](#operationConsumes) MUST be either `"multipart/form-data"`, `" application/x-www-form-urlencoded"` or both and the parameter MUST be [`in`](#parameterIn) `"formData"`.
 <a name="parameterFormat"></a>format | `string` | The extending format for the previously mentioned [`type`](#parameterType). See [Data Type Formats](#dataTypeFormat) for further details.
 <a name="parameterAllowEmptyValue"/>allowEmptyValue | `boolean` | Sets the ability to pass empty-valued parameters. This is valid only for either `query` or `formData` parameters and allows you to send a parameter with a name only or  an empty value. Default value is `false`.
 <a name="parameterItems"></a>items | [Items Object](#itemsObject) | **Required if [`type`](#parameterType) is "array".** Describes the type of items in the array.
 <a name="parameterCollectionFormat"></a>collectionFormat | `string` | Determines the format of the array if type array is used. Possible values are: <ul><li>`csv` - comma separated values `foo,bar`. <li>`ssv` - space separated values `foo bar`. <li>`tsv` - tab separated values `foo\tbar`. <li>`pipes` - pipe separated values <code>foo&#124;bar</code>. <li>`multi` - corresponds to multiple parameter instances instead of multiple values for a single instance `foo=bar&foo=baz`. This is valid only for parameters [`in`](#parameterIn) "query" or "formData". </ul> Default value is `csv`.
-<a name="parameterDefault"></a>default | * | Sets a default value to the parameter. The type of the value depends on the defined [`type`](#parameterType). See http://json-schema.org/latest/json-schema-validation.html#anchor101.
+<a name="parameterDefault"></a>default | * | Declares the value of the parameter that the server will use if none is provided, for example a "count" to control the number of results per page might default to 100 if not supplied by the client in the request. (Note: "default" has no meaning for required parameters.)  See http://json-schema.org/latest/json-schema-validation.html#anchor101. Unlike JSON Schema this value MUST conform to the defined [`type`](#parameterType) for this parameter.
 <a name="parameterMaximum"></a>maximum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
 <a name="parameterExclusiveMaximum"></a>exclusiveMaximum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
 <a name="parameterMinimum"></a>minimum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
@@ -741,7 +766,7 @@ type: file
 
 #### <a name="itemsObject"></a>Items Object
 
-An limited subset of JSON-Schema's items object. It is used by parameter definitions that are not located [`in`](#parameterIn) `"body"`.
+A limited subset of JSON-Schema's items object. It is used by parameter definitions that are not located [`in`](#parameterIn) `"body"`.
 
 ##### Fixed Fields
 Field Name | Type | Description
@@ -750,7 +775,7 @@ Field Name | Type | Description
 <a name="itemsFormat"></a>format | `string` | The extending format for the previously mentioned [`type`](#parameterType). See [Data Type Formats](#dataTypeFormat) for further details.
 <a name="itemsItems"></a>items | [Items Object](#itemsObject) | **Required if [`type`](#itemsType) is "array".** Describes the type of items in the array.
 <a name="itemsCollectionFormat"></a>collectionFormat | `string` | Determines the format of the array if type array is used. Possible values are: <ul><li>`csv` - comma separated values `foo,bar`. <li>`ssv` - space separated values `foo bar`. <li>`tsv` - tab separated values `foo\tbar`. <li>`pipes` - pipe separated values <code>foo&#124;bar</code>. </ul> Default value is `csv`.
-<a name="itemsDefault"></a>default | * | Sets a default value to the data type. The type of the value depends on the defined [`type`](#itemsType). See http://json-schema.org/latest/json-schema-validation.html#anchor101.
+<a name="itemsDefault"></a>default | * | Declares the value of the item that the server will use if none is provided. (Note: "default" has no meaning for required items.) See http://json-schema.org/latest/json-schema-validation.html#anchor101. Unlike JSON Schema this value MUST conform to the defined [`type`](#itemsType) for the data type.
 <a name="itemsMaximum"></a>maximum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
 <a name="itemsMaximum"></a>exclusiveMaximum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
 <a name="itemsMinimum"></a>minimum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
@@ -763,6 +788,12 @@ Field Name | Type | Description
 <a name="itemsUniqueItems"></a>uniqueItems | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor49.
 <a name="itemsEnum"></a>enum | [*] | See http://json-schema.org/latest/json-schema-validation.html#anchor76.
 <a name="itemsMultipleOf"></a>multipleOf | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor14.
+
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="itemsExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ##### Items Object Examples
 
@@ -818,7 +849,7 @@ Field Name | Type | Description
 Field Pattern | Type | Description
 ---|:---:|---
 <a name="responsesCode"></a>{[HTTP Status Code](#httpCodes)} | [Response Object](#responseObject) <span>&#124;</span> [Reference Object](#referenceObject) | Any [HTTP status code](#httpCodes) can be used as the property name (one property per HTTP status code). Describes the expected response for that HTTP status code.  [Reference Object](#referenceObject) can be used to link to a response that is defined at the [Swagger Object's responses](#swaggerResponses) section.
-<a name="parameterExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
+<a name="responsesExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 
 ##### Responses Object Example
@@ -843,7 +874,7 @@ A 200 response for successful operation and a default response for others (imply
 ```
 
 ```yaml
-200:
+'200':
   description: a pet to be returned
   schema:
     $ref: '#/definitions/Pet'
@@ -863,6 +894,12 @@ Field Name | Type | Description
 <a name="responseSchema"></a>schema | [Schema Object](#schemaObject) | A definition of the response structure. It can be a primitive, an array or an object. If this field does not exist, it means no content is returned as part of the response. As an extension to the [Schema Object](#schemaObject), its root `type` value may also be `"file"`. This SHOULD be accompanied by a relevant `produces` mime-type.
 <a name="responseHeaders"></a>headers | [Headers Object](#headersObject) | A list of headers that are sent with the response.
 <a name="responseExamples"></a>examples | [Example Object](#exampleObject) | An example of the response message.
+
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="responseExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ##### Response Object Examples
 
@@ -1042,7 +1079,7 @@ Field Name | Type | Description
 <a name="headerFormat"></a>format | `string` | The extending format for the previously mentioned [`type`](#stType). See [Data Type Formats](#dataTypeFormat) for further details.
 <a name="headerItems"></a>items | [Items Object](#itemsObject) | **Required if [`type`](#stType) is "array".** Describes the type of items in the array.
 <a name="headerCollectionFormat"></a>collectionFormat | `string` | Determines the format of the array if type array is used. Possible values are: <ul><li>`csv` - comma separated values `foo,bar`. <li>`ssv` - space separated values `foo bar`. <li>`tsv` - tab separated values `foo\tbar`. <li>`pipes` - pipe separated values <code>foo&#124;bar</code>. </ul> Default value is `csv`.
-<a name="headerDefault"></a>default | * | Sets a default value to the data type. The type of the value depends on the defined [`type`](#stType). See http://json-schema.org/latest/json-schema-validation.html#anchor101.
+<a name="headerDefault"></a>default | * | Declares the value of the header that the server will use if none is provided. (Note: "default" has no meaning for required headers.) See http://json-schema.org/latest/json-schema-validation.html#anchor101. Unlike JSON Schema this value MUST conform to the defined [`type`](#headerDefault) for the header.
 <a name="headerMaximum"></a>maximum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
 <a name="headerMaximum"></a>exclusiveMaximum | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor17.
 <a name="headerMinimum"></a>minimum | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor21.
@@ -1055,6 +1092,12 @@ Field Name | Type | Description
 <a name="headerUniqueItems"></a>uniqueItems | `boolean` | See http://json-schema.org/latest/json-schema-validation.html#anchor49.
 <a name="headerEnum"></a>enum | [*] | See http://json-schema.org/latest/json-schema-validation.html#anchor76.
 <a name="headerMultipleOf"></a>multipleOf | `number` | See http://json-schema.org/latest/json-schema-validation.html#anchor14.
+
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="headerExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ##### Header Object Example
 
@@ -1106,6 +1149,8 @@ description: Pets operations
 
 A simple object to allow referencing other definitions in the specification. It can be used to reference parameters and responses that are defined at the top level for reuse.
 
+The Reference Object is a [JSON Reference](http://tools.ietf.org/html/draft-pbryan-zyp-json-ref-02) that uses a [JSON Pointer](http://tools.ietf.org/html/rfc6901) as its value. For this specification, only [canonical dereferencing](http://json-schema.org/latest/json-schema-core.html#anchor27) is supported.
+
 ##### Fixed Fields
 Field Name | Type | Description
 ---|:---:|---
@@ -1123,16 +1168,40 @@ Field Name | Type | Description
 $ref: '#/definitions/Pet'
 ```
 
+##### Relative Schema File Example
+```js
+{
+  "$ref": "Pet.json"
+}
+```
+
+```yaml
+$ref: 'Pet.yaml'
+```
+
+##### Relative Files With Embedded Schema Example
+```js
+{
+  "$ref": "definitions.json#/Pet"
+}
+```
+
+```yaml
+$ref: 'definitions.yaml#/Pet'
+```
+
 #### <a name="schemaObject"></a>Schema Object
 
 The Schema Object allows the definition of input and output data types. These types can be objects, but also primitives and arrays. This object is based on the [JSON Schema Specification Draft 4](http://json-schema.org/) and uses a predefined subset of it. On top of this subset, there are extensions provided by this specification to allow for more complete documentation.
 
+Further information about the properties can be found in [JSON Schema Core](http://json-schema.org/latest/json-schema-core.html) and [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html). Unless stated otherwise, the property definitions follow the JSON Schema specification as referenced here.
+
 The following properties are taken directly from the JSON Schema definition and follow the same specifications:
-- $ref
+- $ref - As a [JSON Reference](https://tools.ietf.org/html/draft-pbryan-zyp-json-ref-03)
 - format (See [Data Type Formats](#dataTypeFormat) for further details)
 - title
 - description ([GFM syntax](https://help.github.com/articles/github-flavored-markdown) can be used for rich text representation)
-- default
+- default (Unlike JSON Schema, the value MUST conform to the defined type for the Schema Object)
 - multipleOf
 - maximum
 - exclusiveMaximum
@@ -1154,6 +1223,7 @@ The following properties are taken from the JSON Schema definition but their def
 - items
 - allOf
 - properties
+- additionalProperties
 
 Other than the JSON Schema subset fields, the following fields may be used for further schema documentation.
 
@@ -1163,8 +1233,14 @@ Field Name | Type | Description
 <a name="schemaDiscriminator"></a>discriminator | `string` | Adds support for polymorphism. The discriminator is the schema property name that is used to differentiate between other schema that inherit this schema. The property name used MUST be defined at this schema and it MUST be in the `required` property list. When used, the value MUST be the name of this schema or any schema that inherits it.
 <a name="schemaReadOnly"></a>readOnly | `boolean` | Relevant only for Schema `"properties"` definitions. Declares the property as "read only". This means that it MAY be sent as part of a response but MUST NOT be sent as part of the request. Properties marked as `readOnly` being `true` SHOULD NOT be in the `required` list of the defined schema. Default value is `false`.
 <a name="schemaXml"></a>xml | [XML Object](#xmlObject) | This MAY be used only on properties schemas. It has no effect on root schemas. Adds Additional metadata to describe the XML representation format of this property.
-<a name="schemaExternalDocs"></a>externalDocs | [External Documentation Object](#externalDocumentationObject) | Additional external documentation for this schema.
-<a name="schemaExample"></a>example | Object | A free-form property to include a an example of an instance for this schema.
+<a name="schemaExternalDocs"></a>externalDocs | [External Documentation Object](#externalDocumentationObject) | Additional external documentation for this schema. 
+<a name="schemaExample"></a>example | Any | A free-form property to include a an example of an instance for this schema.
+
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="schemaExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ###### Composition and Inheritance (Polymorphism)
 
@@ -1273,6 +1349,7 @@ additionalProperties:
 
 ```js
 {
+  "type": "object",
   "properties": {
     "id": {
       "type": "integer",
@@ -1293,6 +1370,7 @@ additionalProperties:
 ```
 
 ```yaml
+type: object
 properties:
   id:
     type: integer
@@ -1381,6 +1459,7 @@ definitions:
 {
   "definitions": {
     "Pet": {
+      "type": "object",
       "discriminator": "petType",
       "properties": {
         "name": {
@@ -1394,55 +1473,57 @@ definitions:
         "name",
         "petType"
       ]
+    },
+    "Cat": {
+      "description": "A representation of a cat",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Pet"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "huntingSkill": {
+              "type": "string",
+              "description": "The measured skill for hunting",
+              "default": "lazy",
+              "enum": [
+                "clueless",
+                "lazy",
+                "adventurous",
+                "aggressive"
+              ]
+            }
+          },
+          "required": [
+            "huntingSkill"
+          ]
+        }
+      ]
+    },
+    "Dog": {
+      "description": "A representation of a dog",
+      "allOf": [
+        {
+          "$ref": "#/definitions/Pet"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "packSize": {
+              "type": "integer",
+              "format": "int32",
+              "description": "the size of the pack the dog is from",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          "required": [
+            "packSize"
+          ]
+        }
+      ]
     }
-  },
-  "Cat": {
-    "description": "A representation of a cat",
-    "allOf": [
-      {
-        "$ref": "#/definitions/Pet"
-      },
-      {
-        "properties": {
-          "huntingSkill": {
-            "type": "string",
-            "description": "The measured skill for hunting",
-            "default": "lazy",
-            "enum": [
-              "clueless",
-              "lazy",
-              "adventurous",
-              "aggressive"
-            ]
-          }
-        },
-        "required": [
-          "huntingSkill"
-        ]
-      }
-    ]
-  },
-  "Dog": {
-    "description": "A representation of a dog",
-    "allOf": [
-      {
-        "$ref": "#/definitions/Pet"
-      },
-      {
-        "properties": {
-          "packSize": {
-            "type": "integer",
-            "format": "int32",
-            "description": "the size of the pack the dog is from",
-            "default": 0,
-            "minimum": 0
-          }
-        },
-        "required": [
-          "packSize"
-        ]
-      }
-    ]
   }
 }
 ```
@@ -1450,6 +1531,7 @@ definitions:
 ```yaml
 definitions:
   Pet:
+    type: object
     discriminator: petType
     properties:
       name:
@@ -1459,35 +1541,37 @@ definitions:
     required:
     - name
     - petType
-Cat:
-  description: A representation of a cat
-  allOf:
-  - $ref: '#/definitions/Pet'
-  - properties:
-      huntingSkill:
-        type: string
-        description: The measured skill for hunting
-        default: lazy
-        enum:
-        - clueless
-        - lazy
-        - adventurous
-        - aggressive
-    required:
-    - huntingSkill
-Dog:
-  description: A representation of a dog
-  allOf:
-  - $ref: '#/definitions/Pet'
-  - properties:
-      packSize:
-        type: integer
-        format: int32
-        description: the size of the pack the dog is from
-        default: 0
-        minimum: 0
-    required:
-    - packSize
+  Cat:
+    description: A representation of a cat
+    allOf:
+    - $ref: '#/definitions/Pet'
+    - type: object
+      properties:
+        huntingSkill:
+          type: string
+          description: The measured skill for hunting
+          default: lazy
+          enum:
+          - clueless
+          - lazy
+          - adventurous
+          - aggressive
+      required:
+      - huntingSkill
+  Dog:
+    description: A representation of a dog
+    allOf:
+    - $ref: '#/definitions/Pet'
+    - type: object
+      properties:
+        packSize:
+          type: integer
+          format: int32
+          description: the size of the pack the dog is from
+          default: 0
+          minimum: 0
+      required:
+      - packSize
 ```
 
 #### <a name="xmlObject"></a>XML Object
@@ -1504,6 +1588,12 @@ Field Name | Type | Description
 <a name="xmlPrefix"></a>prefix | `string` | The prefix to be used for the [name](#xmlName).
 <a name="xmlAttribute"></a>attribute | `boolean` | Declares whether the property definition translates to an attribute instead of an element. Default value is `false`.
 <a name="xmlWrapped"></a>wrapped | `boolean` | MAY be used only for an array definition. Signifies whether the array is wrapped (for example, `<books><book/><book/></books>`) or unwrapped (`<book/><book/>`). Default value is `false`. The definition takes effect only when defined alongside `type` being `array` (outside the `items`).
+
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="xmlExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
 
 ##### XML Object Examples
 
@@ -1618,11 +1708,11 @@ Person:
       format: int32
       xml:
         attribute: true
-      name:
-        type: string
-        xml:
-          namespace: http://swagger.io/schema/sample
-          prefix: sample
+    name:
+      type: string
+      xml:
+        namespace: http://swagger.io/schema/sample
+        prefix: sample
 ```
 
 ```xml
@@ -1855,6 +1945,7 @@ Field Pattern | Type | Description
 ```js
 {
   "Category": {
+    "type": "object",
     "properties": {
       "id": {
         "type": "integer",
@@ -1866,6 +1957,7 @@ Field Pattern | Type | Description
     }
   },
   "Tag": {
+    "type": "object",
     "properties": {
       "id": {
         "type": "integer",
@@ -1881,6 +1973,7 @@ Field Pattern | Type | Description
 
 ```yaml
 Category:
+  type: object
   properties:
     id:
       type: integer
@@ -1888,6 +1981,7 @@ Category:
     name:
       type: string
 Tag:
+  type: object
   properties:
     id:
       type: integer
@@ -2120,6 +2214,12 @@ Field Pattern | Type | Description
 ---|:---:|---
 <a name="scopesName"></a>{name} | `string` | Maps between a name of a scope to a short description of it (as the value of the property).
 
+##### Patterned Objects 
+
+Field Pattern | Type | Description
+---|:---:|---
+<a name="scopesExtensions"></a>^x- | Any | Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`. The value can be `null`, a primitive, an array or an object. See [Vendor Extensions](#vendorExtensions) for further details.
+
 ##### Scopes Object Example
 
 ```js
@@ -2192,5 +2292,6 @@ Some objects in the Swagger specification may be declared and remain empty, or c
 The reasoning behind it is to allow an additional layer of access control over the documentation itself. While not part of the specification itself, certain libraries may choose to allow access to parts of the documentation based on some form of authentication/authorization.
 
 Two examples for this:
+
 1. The [Paths Object](#pathsObject) may be empty. It may be counterintuitive, but this may tell the viewer that they got to the right place, but can't access any documentation. They'd still have access to the [Info Object](#infoObject) which may contain additional information regarding authentication.
 2. The [Path Item Object](#pathItemObject) may be empty. In this case, the viewer will be aware that the path exists, but will not be able to see any of its operations or parameters. This is different than hiding the path itself from the [Paths Object](#pathsObject) so the user will not be aware of its existence. This allows the documentation provider a finer control over what the viewer can see.
