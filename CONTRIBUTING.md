@@ -14,26 +14,47 @@ If in doubt about a policy, please [ask on our Slack](https://communityinviter.c
 
 No changes, ***no matter how trivial***, are ever made to the contents of published specifications.  The only potential changes to those documents are updates to link URLs _if and only if_ the targeted document is moved by a 3rd party.  Other changes to link URLs are not allowed.
 
-### Current branches and documents open to change
+### Development and publication process
+
+Specifications and schemas are published to the [spec site](https://spec.opanapis.org) from the `main` branch:
+
+* Specifications are published from the `versions/` directory
+* Schemas are published from the `schemas/` directory
+
+Specification development occurs on branches derived from the `dev` branch, which contains the `src` directory and the `src/oas.md` file:
+
+* Releases are deveoped on _minor release line branches_: `vX.Y-dev`
+* Post-release fixes are done on _patch release fix branches_: `vX.Y.Z-fix`
+
+When a specification is ready for publication, the `src/oas.md` file from that branch is tagged and copied to `versions/X.Y.Z.md`, which triggers an automatic PR to the spec site.
+
+Development of schemas currently occurs on `main`, but the process is being re-evaluated and is likely to change.
+
+### Current branches open to change
 
 The first PR for a change should be against the oldest release line to which it applies.  Changes can then be forward-ported as appropriate.
 
-The current (31 July 2024) active releases are:
+The specification under development is `src/oas.md`, which _only_ exists on development branches, not on `main`.
 
-| Version | Branch | File | Notes |
-| ------- | ------ | ---- | ----- |
-| 3.0.4 | `v3.0.4-dev` | `versions/3.0.4.md` | Soon to be published |
-| 3.1.1 | `v3.1.1-dev` | `versions/3.1.1.md` | Soon to be published |
-| 3.2.0 | `v3.2.0-dev` | `versions/3.2.0.md` | Planned for late 2024 |
-| 4.0.0 | [OAI/sig-moonwalk](https://github.com/OAI/sig-moonwalk) | [discussions only](https://github.com/OAI/sig-moonwalk/discussions) | TBD, some proposals to be backported and published in 3.2.0 |
+The current (20 October 2024) active specification releases are:
+
+| Version | Branch | Notes |
+| ------- | ------ | ----- |
+| 3.1.2 | `v3.1-dev` | |
+| 3.2.0 | `v3.2-dev` | |
+| 4.0.0 | [OAI/sig-moonwalk](https://github.com/OAI/sig-moonwalk) | [discussions only](https://github.com/OAI/sig-moonwalk/discussions) |
 
 ### Changing the schemas
 
-Schemas are only changed _after_ the specification is changed.  Changes are made on the `main` branch, and should be made to the YAML version _only_.  The JSON version will be generated automatically.
+Schemas are only changed _after_ the specification is changed.
+Changes are made to the YAML versions on the `main` branch.
+The JSON versions are generated when publised to the spec site, at which time the `WORK-IN-PROGRESS` URI placeholders are replaced with the publication date.
 
 ## Authoritative source of truth
 
-* Issue #3576: [What is our authoritative spec URL and how do people find it?](https://github.com/OAI/OpenAPI-Specification/issues/3576)
+The [spec site](https://spec.openapis.org) is the source of truth.
+
+This changed in 2024, as the markdown files on `main` do not include certain credits and citations.
 
 ## Style Guide
 
