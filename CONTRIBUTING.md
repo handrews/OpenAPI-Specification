@@ -28,9 +28,166 @@ Specification development occurs on branches derived from the `dev` branch, whic
 
 When a specification is ready for publication, the `src/oas.md` file from that branch is tagged and copied to `versions/X.Y.Z.md`, which triggers an automatic PR to the spec site.
 
-Development of schemas currently occurs on `main`, but the process is being re-evaluated and is likely to change.
+Development of schemas [currently occurs on `main`](#changing-the-schemas), but the process is [being re-evaluated and is likely to change](https://github.com/OAI/OpenAPI-Specification/issues/3715).
 
-### Current branches open to change
+#### Branch Diagram
+2011-08-10      Swagger 1.0
+2012-08-22      Swagger 1.1
+2014-04-11  5d3a0e90d5bfac492ad323ce4ddc4b9f448fb1f1 branch 1.2-fix
+2014-04-13      Swagger 1.2
+    v1.2-fix
+        2015-06-04  1e1b03b8aa6995dd660b510ebd1b0284057722eb HEAD
+2014-09-08  1ad099b1b7a5e187f431f4abc5358a70c3fad2bf last commit on release day
+2014-09-08      Swagger 2.0
+2014-10-05  dc8166dd90fe498ceec8af58f6a943dc8f5b2db7 spec settles
+2014-11-17  91ed265e6daf6baf439ed74f8f13070a976ddff4 Oct-Nov fixes
+2015-11-21  b9476ee239b1eac27717e39ff5ad39092f8d79df last Swagger 2.0 rev
+2015-10-30  b9476ee239b1eac27717e39ff5ad39092f8d79df branch 2.0-fix
+2015-12-31      OAS 2.0
+    v2.0-fix
+        2.0 2016-01-29  b9476ee239b1eac27717e39ff5ad39092f8d79df fix typo (3.0 br)
+    v3.0-dev
+        2.0 2016-09-29  fb50e3f7f07d0049cfa8c094143154f73405408e Jul-Sep fixes
+2017-02-28  d232e6d3e1ea4038a533329a82876ae868e9cf13
+2017-02-28      OAS 3.0.0-rc0
+        2.0 2017-04-04  fb059ca461bd17b10a9e3e59879f04485886d356 Jan-Apr fixesjk
+2017-04-27  0686522d8bf6aa81ab84070a3af498d083d08d8b
+2017-04-27      OAS 3.0.0-rc1
+2017-06-16  9c083382b39148f909b9dce768740f43e4a61a66
+2017-06-16      OAS 3.0.0-rc2
+        2.0 2023-10-19  78170608af208da8165ab095715e5cb9ff715f47 IETF link fix
+        2.0 2024-02-13  7cc8f4c4e742a20687fa65ace54ed32fcb8c6df0 MD link fix
+2017-07-26  e9c539d86f080f133aa35c3e7db33ef004496625
+2017-07-26      OAS 3.0.0
+    v3.0-fix
+        300 2023-10-19 78170608af208da8165ab095715e5cb9ff715f47 IETF link fix
+        300 2024-02-13 7cc8f4c4e742a20687fa65ace54ed32fcb8c6df0 MD link fix
+2017-12-06      OAS 3.0.1
+2018-10-08      OAS 3.0.2
+2020-02-20      OAS 3.0.3
+2020-06-18      OAS 3.1.0-rc0
+2020-10-08      OAS 3.1.0-rc1
+2021-02-15      OAS 3.1.0
+
+```mermaid
+gitGraph
+  commit
+  branch dev
+  commit tag:"Swagger 1.2"
+  branch v1.2-fix
+  commit tag:"Swagger 1.2.1"
+  checkout dev
+  commit id:"release day" tag:"Swagger 2.0"
+  commit id:"post-release fixes"
+  commit id:"Oct-Nov fixes"
+  commit id:"final Swagger 2.0 fixes"
+  commit id:"Swagger->OAS" tag:"OAS 2.0"
+  branch v2.0-fix
+  commit id:"Jan 2015 fix"
+  branch v3.0-dev
+  checkout v2.0-fix
+  commit id:"Jul-Sep fixes"
+  checkout v3.0-dev
+  commit tag:"OAS 3.0.0-rc0"
+  checkout v2.0-fix
+  commit id:"Jan-Apr fixes"
+  checkout v3.0-dev
+  commit tag:"OAS 3.0.0-rc1"
+  commit tag:"OAS 3.0.0-rc2"
+  commit tag:"OAS 3.0.0"
+  branch v3.0.0-fix
+  checkout v3.0-dev
+  commit tag:"OAS 3.0.1"
+  branch v3.0.1-fix
+  checkout v3.0-dev
+  commit tag:"OAS 3.0.2"
+  branch v3.0.2-fix
+  branch v3.1-dev
+  commit id:"init 3.1"
+  checkout v3.0-dev
+  commit tag:"OAS 3.0.3"
+  branch v3.0.3-fix
+  checkout v3.1-dev
+  merge v3.0-dev
+  commit tag:"OAS 3.1.0-rc0"
+  commit tag:"OAS 3.1.0-rc1"
+  commit tag:"OAS 3.1.0"
+  branch v3.1.0-fix
+  checkout v2.0-fix
+  commit id:"2.0 IETF link fix"
+  commit id:"2.0 MD link fix"
+  checkout v3.0.0-fix
+  commit id:"3.0.0 IETF link fix"
+  commit id:"3.0.0 MD link fix"
+  checkout v3.0.1-fix
+  commit id:"3.0.1 IETF link fix"
+  commit id:"3.0.1 MD link fix"
+  checkout v3.0.2-fix
+  commit id:"3.0.2 IETF link fix"
+  commit id:"3.0.2 MD link fix"
+  checkout v3.0.3-fix
+  commit id:"3.0.3 IETF link fix"
+  commit id:"3.0.3 MD link fix"
+  checkout v3.1.0-fix
+  commit id:"3.1.0 IETF link fix"
+  commit id:"3.1.0 MD link fix"
+  checkout v3.0-dev
+  commit tag:"OAS 3.0.4"
+  checkout v3.1-dev
+  commit tag:"OAS 3.1.1"
+```
+This would mean that we'd have something like:
+
+```mermaid
+gitGraph TB:
+  commit id:"first 2.0 commit versions/2.0.md"
+  commit id:"Swagger 2.0"
+  commit id:"many post-release fixes"
+  commit id:"OAS 2.0"
+  commit id:"de-facto OAS 2.0.1"
+  commit id:"de-facto OAS 2.0.2"
+  branch v3.0.0-dev
+  commit id:"rename versions/2.0.md versions/3.0.md"
+  commit id:"rename versions/3.0.md versions/3.0.0.md"
+  commit tag:"3.0.0-rc0"
+  commit tag:"3.0.0-rc1"
+  commit tag:"3.0.0-rc2"
+  commit tag:"3.0.0"
+  checkout main
+  merge v3.0.0-dev
+  checkout v3.0.0-dev
+  branch v3.0.1-dev
+  commit id:"rename versions/3.0.0.md versions/3.0.1.md"
+  commit tag:"3.0.1"
+  checkout main
+  merge v3.0.1-dev
+  checkout v3.0.1-dev
+  branch v3.0.2-dev
+  commit id:"rename versions/3.0.1.md versions/3.0.2.md"
+  commit tag:"3.0.2"
+  checkout main
+  merge v3.0.2-dev
+  checkout v3.0.2-dev
+  branch v3.1.0-dev
+  commit id:"rename versions/3.0.2.md versions/3.1.0.md"
+  branch v3.0.3-dev
+  commit id:"rename versions/3.0.2.md versions/3.0.3.md"
+  commit tag:"3.0.3"
+  checkout main
+  merge v3.0.3-dev
+  checkout v3.1.0-dev
+  merge v3.0.3-dev type:HIGHLIGHT id:"pseudo-merge from 3.0.3"
+  commit id:"last 3.1.1 sync commit"
+  branch dev
+  commit id:"rename to oas.md"
+  branch v3.1-dev
+  branch v3.2-dev
+  checkout v3.1-dev
+  commit id:"first 3.1.2 commit"
+  checkout v3.2-dev
+  commit id:"first 3.2.0 commit"
+```
+#### Current branches open to change
 
 The first PR for a change should be against the oldest release line to which it applies.  Changes can then be forward-ported as appropriate.
 
@@ -44,7 +201,7 @@ The current (20 October 2024) active specification releases are:
 | 3.2.0 | `v3.2-dev` | |
 | 4.0.0 | [OAI/sig-moonwalk](https://github.com/OAI/sig-moonwalk) | [discussions only](https://github.com/OAI/sig-moonwalk/discussions) |
 
-### Changing the schemas
+#### Changing the schemas
 
 Schemas are only changed _after_ the specification is changed.
 Changes are made to the YAML versions on the `main` branch.
