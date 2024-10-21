@@ -187,6 +187,111 @@ gitGraph TB:
   checkout v3.2-dev
   commit id:"first 3.2.0 commit"
 ```
+```markdown
+OK, having spent more time with it now that I've figured out some key things, I think I understand how this was supposed to work.
+
+## The original intent
+
+**Basically, it was designed for a workflow in which there were never multiple release lines.**
+
+If you never have parallel releases, it's fine to rename a file across each new branch because the actual development is (conceptually) _linear_, and the branch/file changes are just organizing the conceptual line and ensuring that the published spec is under the correct name.
+
+This explains why asking for a 3.0.4 was seen as... if not strange, then at least something that was not entirely in the plan.  Actually, IIRC, deciding to do a 3.0.3 after having started 3.1.0 was mildly controversial.  In the diagram below, you'll see that that's where the first "pseudo-merge" occurred.
+
+## Pseudo-merges
+
+A "pseudo-merge" (a term I just made up) is a porting of commits from one file on one branch to another file on a different branch.  _This is what we want to eliminate, because it is not well-supported by_ `git` (it requires creative use of `git format-patch` and `git am` which are not commands most people even know exist).
+
+In the diagram below, I have _not_ made square commits for all of the porting between 3.0.4, 3.1.1, and 3.2.0, because that would be a dizzying mess of arrows in all directions.  Instead, I've just treated it as if each release forward-pseudo-merged to the next one as it was released, which is close enough in concept.
+
+## Simplified visual
+
+All filenames not prefixed by a directory are under `versions/`
+
+Bright square outlines are "pseudo-merges" (treating 3.0.4 -> 3.1.1 and 3.1.1 -> 3.2.0 as having one pseudo-merge each at the end of the earlier-numbered release, instead of the extremely complicated reality).
+```
+```mermaid
+gitGraph TB:
+  commit id:"add 1.2.md"
+  commit id:"Swagger 1.2"
+  commit id:"1.2 post-release fixes"
+  commit id:"1.2 link and license fixes"
+  commit id:"add 2.0.md"
+  commit id:"Swagger 2.0"
+  commit id:"Swagger 2.0 dev continued past release date"
+  commit id:"Swagger 2.0 numerous fixes/expansions"
+  commit id:"OAS 2.0"
+  commit id:"de-facto OAS 2.0.1"
+  branch OpenAPI.next
+  commit id:"add mostly empty 3.0.md"
+  merge main type: HIGHLIGHT id:"add 3.0.md as a copy of 2.0.md"
+  checkout main
+  commit id:"de-facto OAS 2.0.2"
+  checkout OpenAPI.next
+  commit tag:"3.0.0-rc0"
+  commit tag:"3.0.0-rc1"
+  commit tag:"3.0.0-rc2"
+  commit id:"rename 3.0.md to 3.0.0.md"
+  checkout main
+  merge OpenAPI.next id:"merge 3.0.0.md to main" tag:"3.0.0"
+  branch v3.0.1
+  commit id:"rename 3.0.0.md to 3.0.1.md"
+  commit id:"3.0.1 work"
+  checkout main
+  merge v3.0.1 id:"merge 3.0.1.md to main" tag:"3.0.1"
+  branch v3.0.2-dev
+  commit id:"rename 3.0.1.md to 3.0.2.md"
+  commit id:"3.0.2 work"
+  checkout main
+  merge v3.0.2-dev id:"merge 3.0.2.md to main" tag:"3.0.2"
+  branch v3.0.3-dev
+  checkout main
+  branch v3.1.0-dev
+  commit id:"rename 3.0.2.md to 3.1.0.md"
+  checkout v3.0.3-dev
+  commit id:"rename 3.0.2.md to 3.0.3.md"
+  commit id:"3.0.3 work"
+  checkout main
+  merge v3.0.3-dev id:"squash 3.0.3.md to main"
+  branch v3.0.4-dev
+  checkout main
+  commit id:"update README" tag:"3.0.3"
+  checkout v3.1.0-dev
+  merge v3.0.3-dev type:HIGHLIGHT id:"pseudo-merge from 3.0.3"
+  commit tag:"3.1.0-rc0"
+  commit tag:"3.1.0-rc1"
+  checkout main
+  merge v3.1.0-dev id:"merge 3.1.0.md to main" tag:"3.1.0"
+  branch v3.2.0-dev
+  commit id:"rename 3.1.0.md to 3.2.0.md"
+  commit id:"initial 3.2.0 work"
+  checkout main
+  branch v3.1.1-dev
+  commit id:"rename 3.1.0.md to 3.1.1.md"
+  commit id:"initial 3.1.1 work"
+  checkout v3.0.4-dev
+  commit id:"rename 3.0.3.md to 3.0.4.md"
+  commit id:"3.0.4 work"
+  checkout v3.1.1-dev
+  merge v3.0.4-dev type:HIGHLIGHT id:"pseudo-merge 3.0.4 into 3.1.1"
+  branch v3.1-dev
+  checkout v3.0.4-dev
+  merge v3.1.1-dev type:HIGHLIGHT id:"pseudo-merge 3.1.1 into 3.0.4"
+  checkout main
+  merge v3.0.4-dev id:"merge 3.0.4.md to main" tag:"3.0.4"
+  merge v3.1.1-dev id:"merge 3.1.1.md to main" tag:"3.1.1"
+  checkout v3.2.0-dev
+  merge v3.1.1-dev type:HIGHLIGHT id:"pseudo-merge 3.1.1 into 3.2.0"
+  branch v3.2-dev
+  commit id:"rename version/3.2.0.md to src/oas.md"
+  commit id:"new 3.2.0 work"
+  checkout v3.1-dev
+  commit id:"new 3.1.2 work"
+  checkout v3.2-dev
+  merge v3.1-dev id:"normal merge of 3.1.2 to 3.2.0"
+```
+```
+OK, having spent more time with it now that I've figured out some key things, I think I understand how this was supposed to work.
 #### Current branches open to change
 
 The first PR for a change should be against the oldest release line to which it applies.  Changes can then be forward-ported as appropriate.
