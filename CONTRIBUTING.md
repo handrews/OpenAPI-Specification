@@ -31,6 +31,7 @@ When a specification is ready for publication, the `src/oas.md` file from that b
 Development of schemas [currently occurs on `main`](#changing-the-schemas), but the process is [being re-evaluated and is likely to change](https://github.com/OAI/OpenAPI-Specification/issues/3715).
 
 #### Branch Diagram
+```
 2011-08-10      Swagger 1.0
 2012-08-22      Swagger 1.1
 2014-04-11  5d3a0e90d5bfac492ad323ce4ddc4b9f448fb1f1 branch 1.2-fix
@@ -68,124 +69,6 @@ Development of schemas [currently occurs on `main`](#changing-the-schemas), but 
 2020-06-18      OAS 3.1.0-rc0
 2020-10-08      OAS 3.1.0-rc1
 2021-02-15      OAS 3.1.0
-
-```mermaid
-gitGraph
-  commit
-  branch dev
-  commit tag:"Swagger 1.2"
-  branch v1.2-fix
-  commit tag:"Swagger 1.2.1"
-  checkout dev
-  commit id:"release day" tag:"Swagger 2.0"
-  commit id:"post-release fixes"
-  commit id:"Oct-Nov fixes"
-  commit id:"final Swagger 2.0 fixes"
-  commit id:"Swagger->OAS" tag:"OAS 2.0"
-  branch v2.0-fix
-  commit id:"Jan 2015 fix"
-  branch v3.0-dev
-  checkout v2.0-fix
-  commit id:"Jul-Sep fixes"
-  checkout v3.0-dev
-  commit tag:"OAS 3.0.0-rc0"
-  checkout v2.0-fix
-  commit id:"Jan-Apr fixes"
-  checkout v3.0-dev
-  commit tag:"OAS 3.0.0-rc1"
-  commit tag:"OAS 3.0.0-rc2"
-  commit tag:"OAS 3.0.0"
-  branch v3.0.0-fix
-  checkout v3.0-dev
-  commit tag:"OAS 3.0.1"
-  branch v3.0.1-fix
-  checkout v3.0-dev
-  commit tag:"OAS 3.0.2"
-  branch v3.0.2-fix
-  branch v3.1-dev
-  commit id:"init 3.1"
-  checkout v3.0-dev
-  commit tag:"OAS 3.0.3"
-  branch v3.0.3-fix
-  checkout v3.1-dev
-  merge v3.0-dev
-  commit tag:"OAS 3.1.0-rc0"
-  commit tag:"OAS 3.1.0-rc1"
-  commit tag:"OAS 3.1.0"
-  branch v3.1.0-fix
-  checkout v2.0-fix
-  commit id:"2.0 IETF link fix"
-  commit id:"2.0 MD link fix"
-  checkout v3.0.0-fix
-  commit id:"3.0.0 IETF link fix"
-  commit id:"3.0.0 MD link fix"
-  checkout v3.0.1-fix
-  commit id:"3.0.1 IETF link fix"
-  commit id:"3.0.1 MD link fix"
-  checkout v3.0.2-fix
-  commit id:"3.0.2 IETF link fix"
-  commit id:"3.0.2 MD link fix"
-  checkout v3.0.3-fix
-  commit id:"3.0.3 IETF link fix"
-  commit id:"3.0.3 MD link fix"
-  checkout v3.1.0-fix
-  commit id:"3.1.0 IETF link fix"
-  commit id:"3.1.0 MD link fix"
-  checkout v3.0-dev
-  commit tag:"OAS 3.0.4"
-  checkout v3.1-dev
-  commit tag:"OAS 3.1.1"
-```
-This would mean that we'd have something like:
-
-```mermaid
-gitGraph TB:
-  commit id:"first 2.0 commit versions/2.0.md"
-  commit id:"Swagger 2.0"
-  commit id:"many post-release fixes"
-  commit id:"OAS 2.0"
-  commit id:"de-facto OAS 2.0.1"
-  commit id:"de-facto OAS 2.0.2"
-  branch v3.0.0-dev
-  commit id:"rename versions/2.0.md versions/3.0.md"
-  commit id:"rename versions/3.0.md versions/3.0.0.md"
-  commit tag:"3.0.0-rc0"
-  commit tag:"3.0.0-rc1"
-  commit tag:"3.0.0-rc2"
-  commit tag:"3.0.0"
-  checkout main
-  merge v3.0.0-dev
-  checkout v3.0.0-dev
-  branch v3.0.1-dev
-  commit id:"rename versions/3.0.0.md versions/3.0.1.md"
-  commit tag:"3.0.1"
-  checkout main
-  merge v3.0.1-dev
-  checkout v3.0.1-dev
-  branch v3.0.2-dev
-  commit id:"rename versions/3.0.1.md versions/3.0.2.md"
-  commit tag:"3.0.2"
-  checkout main
-  merge v3.0.2-dev
-  checkout v3.0.2-dev
-  branch v3.1.0-dev
-  commit id:"rename versions/3.0.2.md versions/3.1.0.md"
-  branch v3.0.3-dev
-  commit id:"rename versions/3.0.2.md versions/3.0.3.md"
-  commit tag:"3.0.3"
-  checkout main
-  merge v3.0.3-dev
-  checkout v3.1.0-dev
-  merge v3.0.3-dev type:HIGHLIGHT id:"pseudo-merge from 3.0.3"
-  commit id:"last 3.1.1 sync commit"
-  branch dev
-  commit id:"rename to oas.md"
-  branch v3.1-dev
-  branch v3.2-dev
-  checkout v3.1-dev
-  commit id:"first 3.1.2 commit"
-  checkout v3.2-dev
-  commit id:"first 3.2.0 commit"
 ```
 ```markdown
 OK, having spent more time with it now that I've figured out some key things, I think I understand how this was supposed to work.
@@ -208,7 +91,10 @@ In the diagram below, I have _not_ made square commits for all of the porting be
 
 All filenames not prefixed by a directory are under `versions/`
 
-Bright square outlines are "pseudo-merges" (treating 3.0.4 -> 3.1.1 and 3.1.1 -> 3.2.0 as having one pseudo-merge each at the end of the earlier-numbered release, instead of the extremely complicated reality).
+Square outlines are "pseudo-merges" (treating 3.0.4 -> 3.1.1 and 3.1.1 -> 3.2.0 as having one pseudo-merge each at the end of the earlier-numbered release, instead of the extremely complicated reality).
+
+Circular outlines are normal merges.
+
 ```
 ```mermaid
 gitGraph TB:
@@ -262,13 +148,13 @@ gitGraph TB:
   commit tag:"3.1.0-rc1"
   checkout main
   merge v3.1.0-dev id:"merge 3.1.0.md to main" tag:"3.1.0"
-  branch v3.2.0-dev
-  commit id:"rename 3.1.0.md to 3.2.0.md"
-  commit id:"initial 3.2.0 work"
-  checkout main
   branch v3.1.1-dev
   commit id:"rename 3.1.0.md to 3.1.1.md"
   commit id:"initial 3.1.1 work"
+  checkout main
+  branch v3.2.0-dev
+  commit id:"rename 3.1.0.md to 3.2.0.md"
+  commit id:"initial 3.2.0 work"
   checkout v3.0.4-dev
   commit id:"rename 3.0.3.md to 3.0.4.md"
   commit id:"3.0.4 work"
