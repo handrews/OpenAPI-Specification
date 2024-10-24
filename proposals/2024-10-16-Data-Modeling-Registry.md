@@ -21,17 +21,73 @@
 
 ## Introduction
 
-The OAS uses JSON Schema as its data modeling system.  This works well for JSON, but is not an obvious fit for other media types, or for formats such as HTTP headers that are not defined as media types.
+The OAS uses JSON Schema as its data modeling system.
+This works well for JSON, but is not an obvious fit for other media types, nor for formats such as HTTP headers that are not defined as media types.
 
-This proposal introduces a data modeling registry to enable data modeling to be extensible outside of the OAS release process.
+This proposal introduces a `dataModel` field holding a newly proposed Data Model Object, along with a registry of data modeling technologies and strategies used to interpret the new Object.
 
 ## Motivation
 
-The OAS currently offers additional Objects to adapt JSON Schema for certain other media types (`application/xml`, `application/x-www-form-urlencoded`, and `multipart/form-data`).
+The OAS currently offers additional Objects to adapt JSON Schema for certain other media types: `application/xml`, `application/x-www-form-urlencoded`, and `multipart/form-data`.
+
 This approach requires changing the OAS whenever new, or newly popular, media types appear.
-It also does not address modeling data formats, such as HTTP headers, that are not defined as media types. ().
+It also does not address hot to model data formats, such as HTTP headers, that are not defined as media types.
 Finally, it does not allow for experimentation with alternative descriptive technologies such as XSD or CDDL.
 
+### Problems with the current features
+
+There are several ways in which the current system is too complex, both for users and for vendors who might want to offer extensions.
+
+#### Similar media types are not handled in similar ways
+
+There are three supported scenarios (plus a class of scenarios intended to be supported that never, in fact, worked) that all share many elements, but with no two working quite the same way.
+
+* `application/x-www-form-urlencoded` is handled differently when it appears in the query string vs an HTTP message body; some mechanisms are shared, but with subtle differences and limitations
+* `multipart/form-data` mostly, but not entirely, shares the HTTP message body approach of `application/x-www-form-urlencoded`
+* `multipart` support in the OAS was intended to cover all `multipart` media types, but only supports those with named parts (meaning only `form-data`)
+
+#### Objects relate to each other in different ways
+
+Looking at this a different way, there are three different structures for data modeling information:
+
+* **_Wrapping the Schema Object:_**  The Parameter Object (and Header Object) does this, either directly or by way of a Media Type Object
+    * **Name in Object:** Parameter Object
+    * **Name in parent property:** Header Object
+* **_Paralleling the Schema Object:_**  The Media Type Object's `encoding` field provides an object of Encoding Objects, where the property names MUST match the top-level schema properties
+* **_Within the Schema Object:_** The XML Object is embedded in the Schema Object via the `xml` field, modifying its behavior during XML serialization and parsing
+
+The location of the name also varies:
+
+* **_Name in Object_**: Parameter Object
+* **_Name in parent property_**: Header Object, Encoding Object, XML Object
+* **_Name correlates with parallel Schema Object_**: Encoding Object
+
+Finally, the Header, Parameter, and Encoding Objects all have two modes, one which includes complex object property mapping and character encoding rules (`style`, `explode`, `allowReserved`) and one involving a Media Type Object (`content`).
+
+#### Existing schema complexity
+
+As of OAS 3.1, full JSON Schema compatibility allows changing the schema dialect in sub-schema resources (subschemas with a `$id`) or separate schema documents.
+
+While there are some implementations that support this, it is generally not well-understood despite being in use in the wild (particularly regarding draft-07 standalone schemas, as draft-07 is the most widely supported JSON Schema draft at this time, and also supported by AsyncAPI).
+
+This is mostly important in showing that we already support changing the data modeling technology.
+We just have not really followed through with the implications or ensured that tooling can succeed at this complex task.
+
+### Lack of extensibility
+
+Given the problems above, it's hard to see how anyone wanting to experiment in this area could successfully do so with a few `x-` extension keywords, which is our usual recommendation.
+
+It's unclear which of the existing approaches should be followed for any given data modeling problem.  The 
+
+With such a complex landscape, it is very challenging to see how to extend the OAS to support new media types, or 
+Our standard advice for experimenting with new OAS features is to add `x-` extension fields and gather feedback from real use.
+This is not feasible with data modeling variations, for two reasons:
+
+1. Data modeling strategies don't always involve additional keywords
+2. Extending data modeling behavior involves shifting some fundamental assumptions
+
+Related to the second point, if we encourage unconstrained experimentation in this area, different experiments are unlikely to share common architectural principles and implementation patters.
+Data modeling is too large and complex of a problem to 
 In other areas of the OAS, it is reasonable to advise people to add `x-` extension fields to experiment with new features.
 However, data modeling is often not a matter of adding fields, but a matter of mapping existing Schema Object structures (sometimes with help from additional Objects and fields) to a different data model.
 Individual `x-` extension fields cannot solve this problem.
