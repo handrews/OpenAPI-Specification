@@ -12,19 +12,23 @@ This site contains the OpenAPI Initiative Registry and content for the HTML vers
 
 * Proceed to [Registry](./registry/index.html)
 
-## Arazzo Specification
+## Specifications
 
-### Versions
+### Arazzo Specification
 
 {% include specification-version-list.md specification="arazzo" %}
 
-## OpenAPI Specification
-
-### Versions
+### OpenAPI Specification
 
 {% include specification-version-list.md specification="oas" %}
 
-### Non-Normative JSON Schemas
+### Overlay Specification
+
+{% include specification-version-list.md specification="overlay" %}
+
+## JSON Schemas (non-[normative](https://en.wikipedia.org/wiki/Normativity#Standards_documents))
+
+### OpenAPI Specification
 
 {% assign schema_files = site.static_files | where: "extname", "" | sort: "path" | reverse %}
 {% assign last_version = "" %}
@@ -46,9 +50,3 @@ This site contains the OpenAPI Initiative Registry and content for the HTML vers
 {%- assign separator = ", " -%}
 {%- endif -%}
 {%- endfor %}
-
-## Overlay Specification
-
-### Versions
-
-{% include specification-version-list.md specification="overlay" %}
