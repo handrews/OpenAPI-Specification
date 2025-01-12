@@ -255,6 +255,11 @@ $defs:
         type: array
         items:
           type: string
+      tagRefs:
+        type: object
+        additionalProperties:
+          type: string
+          format: uri-reference
       summary:
         type: string
       description:

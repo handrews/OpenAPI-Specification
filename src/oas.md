@@ -191,9 +191,6 @@ In some cases, an unambiguous URI-based alternative is available, and OAD author
 
 | Source | Target | Alternative |
 | ---- | ---- | ---- |
-| [Security Requirement Object](#security-requirement-object) `{name}` | [Security Scheme Object](#security-scheme-object) name under the [Components Object](#components-object) | _n/a_ |
-| [Discriminator Object](#discriminator-object) `mapping` _(implicit, or explicit name syntax)_ | [Schema Object](#schema-object) name under the Components Object | `mapping` _(explicit URI syntax)_ |
-| [Operation Object](#operation-object) `tags` | [Tag Object](#tag-object) `name` (in the [OpenAPI Object](#openapi-object)'s `tags` array) | _n/a_ |
 | [Link Object](#link-object) `operationId` | [Path Item Object](#path-item-object) `operationId` | `operationRef` |
 
 A fifth implicit connection involves appending the templated URL paths of the [Paths Object](#paths-object) to the appropriate [Server Object](#server-object)'s `url` field.
@@ -201,6 +198,25 @@ This is unambiguous because only the entry document's Paths Object contributes U
 
 It is RECOMMENDED to consider all Operation Objects from all parsed documents when resolving any Link Object `operationId`.
 This requires parsing all referenced documents prior to determining an `operationId` to be unresolvable.
+
+##### Resolving names from Objects
+
+Some implicit connectins resolve to names in an Objects found under the OpenAPI Document's OpenAPI Object, specifically the Components Object under `components` or the list of Tag Objects under `tags`.
+
+| Source | Target | Alternative |
+| [Operation Object](#operation-object) `tags` | [Tag Object](#tag-object) `name` (in the [OpenAPI Object](#openapi-object)'s `tags` array) | _n/a_ |
+| [Security Requirement Object](#security-requirement-object) `{name}` | [Security Scheme Object](#security-scheme-object) name under the [Components Object](#components-object) | _n/a_ |
+| [Discriminator Object](#discriminator-object) `mapping` _(implicit, or explicit name syntax)_ | [Schema Object](#schema-object) name under the Components Object | `mapping` _(explicit URI syntax)_ |
+
+Each implicit connection that works with names has an alternative that uses URIs.  To ensure compatibility with past 3.x releases, the name resolution behavior is implementation-defined.  However, tools can maximize interoperability by doing the following:
+
+Implementations SHOULD resolve names from the entry document, as a referenced document may be referenced from different entry documents at different times.  This means it is not always possible to reference the entry document with a URI, while it _is_ always possible to reference the contents of the current document with a URI.
+
+Fields that can be either a name or a URI SHOULD be resolved as names if possible, with URI resolution as a fallback mechanism.  Strings that could either be simple names or a single relative path segment, such as `"foo"`, can be prefixed with `"./"` to ensure URI resolution behavior (e.g. `"./foo"`).
+
+OAD authors SHOULD NOT define component or tag names with URI-like syntax such as `"./foo"` or `"https://example.com/foo"`, as the resulting behavior is likely to be counter-intuitive.
+
+##### Resolving values that can be either names or URI references
 
 The implicit connections in the Security Requirement Object and Discriminator Object rely on the _component name_, which is the name of the property holding the component in the appropriately typed sub-object of the Components Object.
 For example, the component name of the Schema Object at `#/components/schemas/Foo` is `Foo`.
@@ -1014,7 +1030,8 @@ Describes a single API operation on a path.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="operation-tags"></a>tags | [`string`] | A list of tags for API documentation control. Tags can be used for logical grouping of operations by resources or any other qualifier. |
+| <a name="operation-tags"></a>tags | [`string`] | A list of tags for API documentation control. Tags can be used for logical grouping of operations by resources or any other qualifier. Tags can be supplemented by [Tag Objects](#tag-object), which implementations SHOULD resolve from the entry document. |
+| <a name="operation-tag-refs"></a>tagRefs | Map[`string`, `string`] | A map of tag names to URIs for a corresponding Tag Object; if the `name` field in the Tag Object refrenced by the property value is not identical to the property name, implementations MUST produce an error as it is likely that the Tag Object array has been reordered, or the position in the list has been mis-counted. |
 | <a name="operation-summary"></a>summary | `string` | A short summary of what the operation does. |
 | <a name="operation-description"></a>description | `string` | A verbose explanation of the operation behavior. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="operation-external-docs"></a>externalDocs | [External Documentation Object](#external-documentation-object) | Additional external documentation for this operation. |
@@ -1025,6 +1042,7 @@ Describes a single API operation on a path.
 | <a name="operation-callbacks"></a>callbacks | Map[`string`, [Callback Object](#callback-object) \| [Reference Object](#reference-object)] | A map of possible out-of band callbacks related to the parent operation. The key is a unique identifier for the Callback Object. Each value in the map is a [Callback Object](#callback-object) that describes a request that may be initiated by the API provider and the expected responses. |
 | <a name="operation-deprecated"></a>deprecated | `boolean` | Declares this operation to be deprecated. Consumers SHOULD refrain from usage of the declared operation. Default value is `false`. |
 | <a name="operation-security"></a>security | [[Security Requirement Object](#security-requirement-object)] | A declaration of which security mechanisms can be used for this operation. The list of values includes alternative Security Requirement Objects that can be used. Only one of the Security Requirement Objects need to be satisfied to authorize a request. To make security optional, an empty security requirement (`{}`) can be included in the array. This definition overrides any declared top-level [`security`](#oas-security). To remove a top-level security declaration, an empty array can be used. |
+| <a name="operation-security-refs"></a>securityRefs |
 | <a name="operation-servers"></a>servers | [[Server Object](#server-object)] | An alternative `servers` array to service this operation. If a `servers` array is specified at the [Path Item Object](#path-item-servers) or [OpenAPI Object](#oas-servers) level, it will be overridden by this value. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
@@ -3353,11 +3371,13 @@ The behavior of any configuration of `oneOf`, `anyOf`, `allOf` and `discriminato
 
 ##### Options for Mapping Values to Schemas
 
-The value of the property named in `propertyName` is used as the name of the associated schema under the [Components Object](#components-object), _unless_ a `mapping` is present for that value.
+The value of the property named in `propertyName` is used as the name of the associated schema under the [Components Object](#components-object), _unless_ a `mapping` is present for that value.  Names SHOULD be resolved from the entry document's Components Object, although for compatibility purposes implementations MAY define other resolution behavior such as resolving from the current document.
+
 The `mapping` entry maps a specific property value to either a different schema component name, or to a schema identified by a URI.
 When using implicit or explicit schema component names, inline `oneOf` or `anyOf` subschemas are not considered.
-The behavior of a `mapping` value that is both a valid schema name and a valid relative URI reference is implementation-defined, but it is RECOMMENDED that it be treated as a schema name.
+A `mapping` value that can be resolved as a component name SHOULD be resolved in this manner, with URI reference resolution as the fallback behavior.  However, implementations MAY define other behavior for compatibility purposes.
 To ensure that an ambiguous value (e.g. `"foo"`) is treated as a relative URI reference by all implementations, authors MUST prefix it with the `"."` path segment (e.g. `"./foo"`).
+Defining component names that appear to be URIs and cannot be disambiguated with a technique such as the `"./"` prefix (e.g. `"https://example.com/something"`) is NOT RECOMMENDED as the resulting behavior is likely to be counter-intuitive.
 
 Mapping keys MUST be string values, but tooling MAY convert response values to strings for comparison.
 However, the exact nature of such conversions are implementation-defined.
@@ -4029,8 +4049,11 @@ flows:
 
 #### Security Requirement Object
 
-Lists the required security schemes to execute this operation.
-The name used for each property MUST correspond to a security scheme declared in the [Security Schemes](#security-scheme-object) under the [Components Object](#components-object).
+Lists the required security schemes to execute this operation, either by name or using a URI.  Entries are assumed to be names, unless they cannot be resolved, in which case they are resolved as URIs (similar to the [Discriminator Object's](#discriminator-object) `mapping` field).
+
+Certain relative path URIs, such as `"foo"`, are likely to be resolved as names.  To ensure that they are resolved as URIs, prefix them with `"./"`, e.g. `"./foo"`, which resolves to the same full URI as `"foo"`.  It is possible to chose Components Object names that look like more complex URIs.  Using such names will result in things that look like URIs being resolved as names, and is NOT RECOMMENDED.
+
+When listing by name, the name used for each property MUST correspond to a security scheme declared in the [Security Schemes](#security-scheme-object) under the [Components Object](#components-object).  Implementations SHOULD use the entry document's Components Object to resolve these names.
 
 A Security Requirement Object MAY refer to multiple security schemes in which case all schemes MUST be satisfied for a request to be authorized.
 This enables support for scenarios where multiple query parameters or HTTP headers are required to convey security information.
