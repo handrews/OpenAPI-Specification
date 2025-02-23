@@ -306,14 +306,55 @@ This feature is used both for working in development or test environments withou
 
 Note that some URI fields are named `url` for historical reasons, but the descriptive text for those fields uses the correct "URI" terminology.
 
-Unless specified otherwise, all fields that are URIs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2).
+Unless specified otherwise, all fields that are URIs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2), which are resolved relative to the appropriate base URI, which is determined in accordance with [[RFC3986]] [Section 5.1](https://tools.ietf.org/html/rfc3986#section-5.1).
 
-Relative references in [Schema Objects](#schema-object), including any that appear as `$id` values, use the nearest parent `$id` as a Base URI, as described by [JSON Schema Specification Draft 2020-12](https://tools.ietf.org/html/draft-bhutton-json-schema-00#section-8.2).
+#### Establishing a Base URI
 
-Relative URI references in other Objects, and in Schema Objects where no parent schema contains an `$id`, MUST be resolved using the referring document's base URI, which is determined in accordance with [[RFC3986]] [Section 5.1.2 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.2).
-In practice, this is usually the retrieval URI of the document, which MAY be determined based on either its current actual location or a user-supplied expected location.
+OpenAPI Documents set their own base URIs using the `$self` field of the [OpenAPI Object](#openapi-object), in accordance with RFC3986 [Section 5.1.1](https://tools.ietf.org/html/rfc3986#section-5.1.1).
+Similarly, JSON Schema resources set their base URIs using the `$id` keyword, as described by [JSON Schema Specification Draft 2020-12](https://tools.ietf.org/html/draft-bhutton-json-schema-00#section-8.2).
 
-If a URI contains a fragment identifier, then the fragment should be resolved per the fragment resolution mechanism of the referenced document. If the representation of the referenced document is JSON or YAML, then the fragment identifier SHOULD be interpreted as a JSON-Pointer as per [RFC6901](https://tools.ietf.org/html/rfc6901).
+[Schema Objects](#sceham-object) that are embedded in OpenAPI Documents instead of being standalone JSON Schema documents use the enclosing OpenAPI Document's base URI in accordance with RFC3986 [Section 5.1.2](https://tools.ietf.org/html/rfc3986#section-5.1.2).
+If the `$self` or `$id` value is itself a relative reference, it is resolved against first resolved against the next possible base URI, which may include the retrieval URL per RFC3986 [Section 5.1.3](https://tools.ietf.org/html/rfc3986#section-5.1.3), or an application-assigned default base URI per RFC3986 [Section 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.4).
+
+If no `$self` or `$id` is present, the base URI is determined as specified in RFC3986 without any OAS-specific behavior.
+
+Consider this OpenAPI Document, given a retrieval URL of `https://example.com/openapi`:
+
+```YAML
+$self: openapi/main-api     # Resolves to https://example.com/openapi/main-api
+openapi: 3.2.0
+info:
+  version: example-1.0
+components:
+  schemas:
+    Foo:
+      $id: ../schemas/foo   # Resolves to https://example.com/schemas/foo
+      type: object
+      properties:
+        xyz:
+          $id: other        # Resolves to https://example.com/schemas/other
+          $ref: elsewhere   # Resolves to https://example.com/schemas/elsewhere
+    Bar:
+      $ref: ../schemas/bar  # Resolves to https://example.com/schemas/bar
+```
+
+Here the `$ref` at `#/components/schemas/Foo/properties/xyz` uses the adjacent `$id` for its base URI.
+To determine this base URI, each relative base URI is first resolved against the base URI from the enclosing resource (a parent Schema Object or the entire OpenAPI Document), with the OpenAPI Document's base URI being resolved against its retrieval URI.
+
+In contrast, the `$ref` at `#/components/schemas/Bar` uses `$self` for its base URI, as there are no relevant `$id` keywords for that Schema Object.
+
+#### Resolving fragments
+
+Fragment resolution is determined by the referenced document's meda type, in accordance with [[RFC3986]] [Section 3.5](https://tools.ietf.org/html/rfc3986#section-3.5).
+In the absence of a media type, or in the case where a media type such as `application/json` that does not define fragment semantics, fragment resolution in a referenced document SHOULD be determined by the expected document type based on the reference context.
+
+JSON Schema documents MUST resolve fragments in accordance with [[JSON-Schema-2020-12|JSON Schema]].
+
+OpenAPI Documents MUST resolve empty fragments or fragments that begin with a `/` as JSON-Pointers as per [RFC6901](https://tools.ietf.org/html/rfc6901).
+Non-empty fragments that start with a character other than `/` MUST be resolved as JSON Schema plain name fragments, in accordance with the JSON Schema draft 2020-12 specification.
+JSON Pointer fragments that cross into a Schema Object are subject to the caveats documented in [Section 8.2](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-8.2) and [Section 9](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-9) of [[JSON-Schema-2020-12|JSON Schema]].
+
+#### Relative URI References in MarkDown Text
 
 Relative references in CommonMark hyperlinks are resolved in their rendered context, which might differ from the context of the API description.
 
@@ -342,6 +383,7 @@ This is the root object of the [OpenAPI Description](#openapi-description).
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="oas-version"></a>openapi | `string` | **REQUIRED**. This string MUST be the [version number](#versions) of the OpenAPI Specification that the OpenAPI Document uses. The `openapi` field SHOULD be used by tooling to interpret the OpenAPI Document. This is _not_ related to the API [`info.version`](#info-version) string. |
+| <a name-"oas-self"></a>$self | `URI-reference` (without a fragment) | Sets the URI of this document, which also serves as its base URI in accordance with [RFC 3986 §5.1.1](https://www.rfc-editor.org/rfc/rfc3986#section-5.1.1); the value MUST NOT be the empty string and MUST NOT contain a fragment (even if the fragment is empty).  Implementations MUST support referencing a document by the resolved URI defined by this field.
 | <a name="oas-info"></a>info | [Info Object](#info-object) | **REQUIRED**. Provides metadata about the API. The metadata MAY be used by tooling as required. |
 | <a name="oas-json-schema-dialect"></a> jsonSchemaDialect | `string` | The default value for the `$schema` keyword within [Schema Objects](#schema-object) contained within this OAS document. This MUST be in the form of a URI. |
 | <a name="oas-servers"></a>servers | [[Server Object](#server-object)] | An array of Server Objects, which provide connectivity information to a target server. If the `servers` field is not provided, or is an empty array, the default value would be a [Server Object](#server-object) with a [url](#server-url) value of `/`. |
