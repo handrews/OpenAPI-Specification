@@ -26,6 +26,19 @@ An OpenAPI Description (OAD) formally describes the surface of an API and its se
 
 An OpenAPI Document is a single JSON or YAML document that conforms to the OpenAPI Specification. An OpenAPI Document compatible with OAS 3.\*.\* contains a required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
 
+### API Description URI
+
+An identifier for a document or [other resource](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-root-schema-and-subschemas-) within an OpenAPI Description.
+Implementations MUST NOT assume that such identifiers (URIs) can be used as locators (URLs).
+Both OpenAPI Documents (with the [OpenAPI Object's](#openapi-object) `$self` field) and JSON Schema resources (with the JSON Schema [`$id` keyword](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-the-id-keyword) MAY define their own URI, and implementations MUST support referencing documents and resources by such self-assigned identifiers.
+
+Note that several fields in this specification that hold URIs are named `url` or end with `Url` for historical reasons; their descriptions use the current correct URI terminology.
+
+### API URL
+
+An identifier which is also a locator used to interact with an API endpoint or other resource involved in API usage, such as an authentication server.
+Fields that hold API URLs describe their contents as "URLs" rather than "URIs".
+
 ### Schema
 
 A "schema" is a formal description of syntax and structure.
@@ -150,6 +163,13 @@ In a multi-document OAD, the document containing the OpenAPI Object where parsin
 It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or `openapi.yaml`.
 
 #### Parsing Documents
+
+In order to support [self-assigned URIs](#api-description-uris), implementations MUST parse each document in full to ensure that all OAS fields or JSON Schema keywords that assign URIs or URI fragments have been seen.
+
+[OpenAPI Documents](#openapi-documents) and JSON Schema [resources](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-root-schema-and-subschemas-) MAY define their own identifying URI using the [OpenAPI Object's](#openapi-object) `$self` field or JSON Schema's [`$id` keyword](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-the-id-keyword), respectively.
+
+Implementations MUST support resolving API Description URIs
+These identifiers are resolved based on the identity of each document or [resource](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-root-schema-and-subschemas-), which MAY be self-assigned using the [OpenAPI Object's](#openapi-object) `$self` field for [OpenAPI Documents](#openapi-documents), or JSON Schema's [`$id` keyword](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-the-id-keyword) for schema resources including standalone schema documents.
 
 In order to properly handle [Schema Objects](#schema-object), OAS 3.1 inherits the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
 
@@ -301,6 +321,8 @@ OpenAPI Description authors SHOULD consider how text using such extensions will 
 ### Relative References in API Description URIs
 
 URIs used as references within an OpenAPI Description, or to external documentation or other supplementary information such as a license, are resolved as _identifiers_, and described by this specification as **_URIs_**.
+These identifiers are resolved based on the identity of each document or [resource](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-root-schema-and-subschemas-), which MAY be self-assigned using the [OpenAPI Object's](#openapi-object) `$self` field for [OpenAPI Documents](#openapi-documents), or JSON Schema's [`$id` keyword](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-the-id-keyword) for schema resources including standalone schema documents.
+
 As noted under [Parsing Documents](#parsing-documents), this specification inherits JSON Schema Specification Draft 2020-12's requirements for [loading documents](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9) and associating them with their expected URIs, which might not match their current location.
 This feature is used both for working in development or test environments without having to change the URIs, and for working within restrictive network configurations or security policies.
 
@@ -384,9 +406,14 @@ Relative references in CommonMark hyperlinks are resolved in their rendered cont
 ### Relative References in API URLs
 
 API endpoints are by definition accessed as locations, and are described by this specification as **_URLs_**.
+A single OpenAPI Description can describe many API instances.
+For this reason, API URLs are resolved based on the API's deployed location, as defined by the most relevant [Server Object](#server-object).
 
-Unless specified otherwise, all fields that are URLs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2).
-Unless specified otherwise, relative references are resolved using the URLs defined in the [Server Object](#server-object) as a Base URL. Note that these themselves MAY be relative to the referring document (**NOT** the [OpenAPI Object's](#openapi-object) `$self` field).
+Unless specified otherwise, all fields that are URLs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2), including the Server Object's `url` field.
+
+When resolving a relative Server Object `url`, or resolving other URLs in the absence of a Server Object, the _location_ of the [OpenAPI Document](#openapi-document), also known as its retrieval URI, is used as the base URI.
+This is different from how API Description URIs are resolved, as they resolve using the [document or resource's _identity_](#relative-references-in-api-description-uris), which MAY be self-assigned within the document.
+This distinction allows OpenAPI Descriptions to have a consistent identity while working with multiple deployments of the described API.
 
 #### Examples of API Base URL Determination
 
