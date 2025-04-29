@@ -334,6 +334,7 @@ $defs:
       in:
         enum:
           - query
+          - querystring
           - header
           - path
           - cookie
@@ -438,6 +439,22 @@ $defs:
                 allowReserved:
                   default: false
                   type: boolean
+
+          styles-for-querystring:
+            if:
+              properties:
+                in:
+                  const: querystring
+              required:
+                - in
+            then:
+              required:
+                - content
+              properties:
+                schema: false
+                style: false
+                explode: false
+                allowReserved: false
 
           styles-for-cookie:
             if:

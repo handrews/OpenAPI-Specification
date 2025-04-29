@@ -1243,7 +1243,8 @@ See [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for a detail
 There are four possible parameter locations specified by the `in` field:
 
 * path - Used together with [Path Templating](#path-templating), where the parameter value is actually part of the operation's URL. This does not include the host or base path of the API. For example, in `/items/{itemId}`, the path parameter is `itemId`.
-* query - Parameters that are appended to the URL. For example, in `/items?id=###`, the query parameter is `id`.
+* query - Parameters that are appended to the URL. For example, in `/items?id=###`, the query parameter is `id`; MUST NOT appear in the same operation as an `in: "querystring"` parameter.
+* querystring - A parameter that treats the entire URL query string as a value which MUST be specified using the `content` field, most often with media type `application/x-www-form-urlencoded` using [Encoding Objects](#encoding-object) in the same way as with request bodies of that media type; MUST NOT appear more than once, and MUST NOT appear in the same operation with any `in: "query"` parameters.
 * header - Custom headers that are expected as part of the request. Note that [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.1) states header names are case insensitive.
 * cookie - Used to pass a specific cookie value to the API.
 
@@ -1260,7 +1261,7 @@ These fields MAY be used with either `content` or `schema`.
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="parameter-name"></a>name | `string` | **REQUIRED**. The name of the parameter. Parameter names are _case sensitive_. <ul><li>If [`in`](#parameter-in) is `"path"`, the `name` field MUST correspond to a template expression occurring within the [path](#paths-path) field in the [Paths Object](#paths-object). See [Path Templating](#path-templating) for further information.<li>If [`in`](#parameter-in) is `"header"` and the `name` field is `"Accept"`, `"Content-Type"` or `"Authorization"`, the parameter definition SHALL be ignored.<li>For all other cases, the `name` corresponds to the parameter name used by the [`in`](#parameter-in) field.</ul> |
-| <a name="parameter-in"></a>in | `string` | **REQUIRED**. The location of the parameter. Possible values are `"query"`, `"header"`, `"path"` or `"cookie"`. |
+| <a name="parameter-in"></a>in | `string` | **REQUIRED**. The location of the parameter. Possible values are `"query"`, `"querystring"`, `"header"`, `"path"` or `"cookie"`. |
 | <a name="parameter-description"></a>description | `string` | A brief description of the parameter. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="parameter-required"></a>required | `boolean` | Determines whether this parameter is mandatory. If the [parameter location](#parameter-in) is `"path"`, this field is **REQUIRED** and its value MUST be `true`. Otherwise, the field MAY be included and its default value is `false`. |
 | <a name="parameter-deprecated"></a> deprecated | `boolean` | Specifies that a parameter is deprecated and SHOULD be transitioned out of usage. Default value is `false`. |
@@ -1275,6 +1276,8 @@ Note that while `"Cookie"` as a `name` is not forbidden if `in` is `"header"`, t
 For simpler scenarios, a [`schema`](#parameter-schema) and [`style`](#parameter-style) can describe the structure and syntax of the parameter.
 When `example` or `examples` are provided in conjunction with the `schema` field, the example SHOULD match the specified schema and follow the prescribed serialization strategy for the parameter.
 The `example` and `examples` fields are mutually exclusive, and if either is present it SHALL _override_ any `example` in the schema.
+
+These fields MUST NOT be used with `in: "querystring"`.
 
 Serializing with `schema` is NOT RECOMMENDED for `in: "cookie"` parameters, `in: "header"` parameters that use HTTP header parameters (name=value pairs following a `;`) in their values, or `in: "header"` parameters where values might have non-URL-safe characters; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details.
 
@@ -1293,6 +1296,8 @@ See also [Appendix C: Using RFC6570-Based Serialization](#appendix-c-using-rfc65
 
 For more complex scenarios, the [`content`](#parameter-content) field can define the media type and schema of the parameter, as well as give examples of its use.
 Using `content` with a `text/plain` media type is RECOMMENDED for `in: "header"` and `in: "cookie"` parameters where the `schema` strategy is not appropriate.
+
+For use with `in: "querystring"` and `application/x-www-form-urlencoded`, see [Encoding the `x-www-form-urlencoded` Media Type](#encoding-the-x-www-form-urlencoded-media-type).
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
