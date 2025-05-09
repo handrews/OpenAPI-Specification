@@ -1512,6 +1512,41 @@ content:
           type: number
 ```
 
+A querystring parameter that uses JSONPath:
+
+```json
+{
+  "in": "querystring",
+  "name": "sql",
+  "content": {
+    "application/jsonpath":
+      "schema": {
+        "type": "string"
+      },
+      "example": "$.a.b[1:2]"
+    }
+  }
+}
+```
+
+```yaml
+in: querystring
+name: sql
+content:
+  application/jsonpath:
+    schema:
+      type: string
+    example: $.a.b[1:1]
+```
+
+As there is not currently a defined mapping between the JSON Schema data model and JSONPath, the details of the string's allowed structure need to be conveyed either in a human-readable `description` field, or through a mechanism outside of the OpenAPI Description, such as a JSON Schema for the data structure to be queried.
+
+Assuming a path of `/foo` and a server of `https://example.com`, the full URL incorporateing the value from the `example` field would be:
+
+```uri
+https://example.com/foo?%24.a.b%5B1%3A1%5D
+```
+
 #### Request Body Object
 
 Describes a single request body.
