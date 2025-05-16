@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/OAI/OpenAPI-Specification/workflows/validate-markdown/badge.svg) [![Issue triagers](https://www.codetriage.com/oai/openapi-specification/badges/users.svg)](https://www.codetriage.com/oai/openapi-specification)
 
-![](https://avatars3.githubusercontent.com/u/16343502?v=3&s=200)
+![OpenAPI logo](https://avatars3.githubusercontent.com/u/16343502?v=3&s=200)
 
 
 The OpenAPI Specification is a community-driven open specification within the [OpenAPI Initiative](https://www.openapis.org/), a Linux Foundation Collaborative Project.
@@ -19,8 +19,6 @@ This GitHub project is the starting point for OpenAPI. Here you will find the in
 
 This repository contains [the Markdown sources](versions) for [all published OpenAPI Specification versions](https://spec.openapis.org/). For release notes and release candidate versions, refer to the [releases page](releases).
 
-Each folder in this repository, such as [schemas](schemas) and [tests](tests), should contain folders pertaining to the current and previous versions of the specification.
-
 ## See It in Action
 
 If you just want to see it work, check out the [list of current examples](https://learn.openapis.org/examples/).
@@ -32,7 +30,7 @@ Looking to see how you can create your own OpenAPI definition, present it, or ot
 
 ## Participation
 
-The current process for developing the OpenAPI Specification is described in 
+The current process for developing the OpenAPI Specification is described in
 the [Contributing Guidelines](CONTRIBUTING.md).
 
 Developing the next version of the OpenAPI Specification is guided by the [Technical Steering Committee (TSC)](https://www.openapis.org/participate/how-to-contribute/governance#TDC). This group of committers bring their API expertise, incorporate feedback from the community, and expand the group of committers as appropriate. All development activity on the future specification will be performed as features and merged into this branch. Upon release of the future specification, this branch will be merged to `main`.

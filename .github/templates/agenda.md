@@ -7,7 +7,7 @@ Whether attending or not, **anyone can comment on this issue prior to the meetin
 Meetings take place over Zoom: [https://zoom.us/j/975841675](https://zoom.us/j/975841675?pwd=SUh4MjRLaEFKNlI3RElpWTdhRDVVUT09), dial-in passcode: 763054
 
 ### Accessibility & Etiquette
-* Participants must abide by our [Code-of-Conduct](https://github.com/OAI/OpenAPI-Specification/blob/main/CODE_OF_CONDUCT.md#code-of-conduct).
+* Participants must abide by our [Code-of-Conduct](https://github.com/OAI/OpenAPI-Specification?tab=coc-ov-file).
 
 * Meetings are recorded for future reference, and for those who are not able to attend in-person.
 
@@ -20,7 +20,7 @@ Meetings take place over Zoom: [https://zoom.us/j/975841675](https://zoom.us/j/9
 
 | Blur My Background | Raise Hand |
 |-|-|
-| <img width="323" alt="Screenshot of Zoom UI showing the 'Stop Video' and 'Blur My Background' control" src="https://github.com/OAI/OpenAPI-Specification/assets/7367/7e43dbbb-6529-46e6-8b04-4c1aa852d9dd"> | <img width="323" alt="Screenshot of Zoom UI showing the 'Reaction' and 'Raise Hand' control" src="https://github.com/OAI/OpenAPI-Specification/assets/7367/f991722f-4651-40aa-9bc4-7e9a2a165a6a"> |
+| <img width="323" alt="Screenshot of Zoom UI showing the 'Stop Video' and 'Blur My Background' control" src="https://github.com/OAI/OpenAPI-Specification/assets/7367/7e43dbbb-6529-46e6-8b04-4c1aa852d9dd"> | <img width="323" alt="Screenshot of Zoom UI showing the 'Reaction' and 'Raise Hand' control" src="https://github.com/user-attachments/assets/bf19ee70-59b1-410e-b893-645f26c2c96e"> |
 
 ### Agenda Structure
 
