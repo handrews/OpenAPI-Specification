@@ -3292,7 +3292,7 @@ When using a Schema Object with XML, if no XML Object is present, the behavior i
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="xml-node-type"></a>nodeType | `string` | One of `element`, `attribute`, `text`, `cdata`, or `none`, as explained under [XML Node Types](#xml-node-types).  The default value is `none` if `$ref`, `$dynamicRef`, or `type: "array"` is present in the [Schema Object](#schema-object) containing the XML Object, and `element` otherwise. |
-| <a name="xml-name"></a>name | `string` | Sets the name of the element/attribute corresponding to the schema, replacing name that was inferred as described under [XML Node Names](#xml-node-names). This field SHALL be ignored if the `nodeType` is `text`, `cdata`, or `none`. |
+| <a name="xml-name"></a>name | `string` | Sets the name of the element/attribute corresponding to the schema, replacing the name that was inferred as described under [XML Node Names](#xml-node-names). This field SHALL be ignored if the `nodeType` is `text`, `cdata`, or `none`. |
 | <a name="xml-namespace"></a>namespace | `string` | The IRI ([[RFC3987]]) of the namespace definition. Value MUST be in the form of a non-relative IRI. |
 | <a name="xml-prefix"></a>prefix | `string` | The prefix to be used for the [name](#xml-name). |
 | <a name="xml-attribute"></a>attribute | `boolean` | Declares whether the property definition translates to an attribute instead of an element. Default value is `false`. If `nodeType` is present, this field MUST NOT be present.<br /><br />**Deprecated:** Use `nodeType: "attribute"` in place of `attribute: true` |
@@ -3307,14 +3307,14 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 ##### XML Node Types
 
-Each Schema Object describes a particular type of XML [node](https://dom.spec.whatwg.org/#interface-node) which is specified by the `nodeType` field, which has the following possible values.
-Except for the special value `none`, these values have numeric equivalents in the DOM [specification](https://dom.spec.whatwg.org/#interface-node) which are given in parentheses after the name:
+Each Schema Object describes a particular type of XML [[!DOM]] [node](https://dom.spec.whatwg.org/#interface-node) which is specified by the `nodeType` field, which has the following possible values.
+Except for the special value `none`, these values have numeric equivalents in the DOM specification which are given in parentheses after the name:
 
 * `element` (1): The schema represents an element and describes its contents
 * `attribute` (2): The schema represents an attribute and describes its value
 * `text` (3): The schema represents a text node (parsed character data)
 * `cdata` (4): The schema represents a CDATA section
-* `none`: The schema does not correspond to any node in the XML document, and its contents are included directly under the parent schema's node
+* `none`: The schema does not correspond to any node in the XML document, and the nodes corresponding to its subschema(s) are included directly under its parent schema's node
 
 The `none` type is useful for JSON Schema constructs that require more Schema Objects than XML nodes, such as a schema containing only `$ref` that exists to facilitate re-use rather than imply any structure.
 
