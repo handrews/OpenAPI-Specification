@@ -44,6 +44,26 @@ Each template expression in the path MUST correspond to a path parameter that is
 
 The value for these path parameters MUST NOT contain any unescaped "generic syntax" characters described by [RFC3986](https://tools.ietf.org/html/rfc3986#section-3): forward slashes (`/`), question marks (`?`), or hashes (`#`).
 
+The path templating is defined by the following [ABNF](https://tools.ietf.org/html/rfc5234) syntax
+
+```abnf
+path-template                  = "/" *( path-segment "/" ) [ path-segment ]
+path-segment                   = 1*( path-literal / template-expression )
+path-literal                   = 1*pchar
+template-expression            = "{" template-expression-param-name "}"
+template-expression-param-name = 1*( %x00-7A / %x7C / %x7E-10FFFF ) ; every UTF8 character except { and }
+
+pchar               = unreserved / pct-encoded / sub-delims / ":" / "@"
+unreserved          = ALPHA / DIGIT / "-" / "." / "_" / "~"
+pct-encoded         = "%" HEXDIG HEXDIG
+sub-delims          = "!" / "$" / "&" / "'" / "(" / ")"
+                    / "*" / "+" / "," / ";" / "="
+```
+
+Here, `pchar`, `unreserved`, `pct-encoded` and `sub-delims` definitions are taken from [RFC 3986](https://tools.ietf.org/html/rfc3986). The `path-template` is directly derived from [RFC 3986, section 3.3](https://datatracker.ietf.org/doc/html/rfc3986#section-3.3).
+
+See also [Appendix C: Using RFC6570-Based Serialization](#appendix-c-using-rfc6570-based-serialization) for additional guidance.
+
 ### Media Types
 
 Media type definitions are spread across several resources.
@@ -63,6 +83,43 @@ Some examples of possible media type definitions:
   application/vnd.github.v3.diff
   application/vnd.github.v3.patch
 ```
+
+JSON-based and JSON-compatible YAML-based media types can make direct use of the [Schema Object](#schema-object) as the Object uses JSON Schema.
+The use of the Schema Object with other media types is handled by mapping them into the JSON Schema [instance data model](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-instance-data-model).
+These mappings may be implicit based on the media type, or explicit based on the values of particular fields.
+Each mapping is addressed where the relevant media type is discussed in this section or under the [Media Type Object](#media-type-object) or [Encoding Object](#encoding-object)
+
+#### Sequential Media Types
+
+Within this specification, a _sequential media type_ is defined as any media type that consists of a repeating structure, without any sort of header, footer, envelope, or other metadata in addition to the sequence.
+
+Some examples of sequential media types (including some that are not IANA-registered but are in common use) are:
+
+```text
+  application/jsonl
+  application/x-ndjson
+  application/json-seq
+  application/geo+json-seq
+  text/event-stream
+  multipart/mixed
+```
+
+In the first three above, the repeating structure is any [JSON value](https://tools.ietf.org/html/rfc8259#section-3).
+The fourth repeats `application/geo+json`-structured values, while `text/event-stream` repeats a custom text format related to Server-Sent Events.
+The final media type listed above, `multipart/mixed`, provides an ordered list of documents of any media type, and is sometimes streamed.
+
+Implementations MUST support mapping sequential media types into the JSON Schema data model by treating them as if the values were in an array in the same order.
+
+See [Complete vs Streaming Content](#complete-vs-streaming-content) for more information on handling sequential media type in a streaming context, including special considerations for `text/event-stream` content.
+For `multipart` types, see also [Encoding By Position](#encoding-by-position).
+
+#### Media Type Registry
+
+While the [Schema Object](#schema-object) is designed to describe and validate JSON, several other media types are commonly used in APIs.
+Requirements regarding support for other media types are documented in this Media Types section and in several Object sections later in this specification.
+For convenience and future extensibility, these are cataloged in the OpenAPI Initiative's [Media Type Registry](https://spec.openapis.org/registry/media-type/), which indicates where in this specification the relevant requirements can be found.
+
+See also the [Media Type Object](#media-type-object) for further information on working with specific media types.
 
 ### HTTP Status Codes
 
@@ -95,17 +152,18 @@ The OpenAPI Specification is versioned using a `major`.`minor`.`patch` versionin
 
 Occasionally, non-backwards compatible changes may be made in `minor` versions of the OAS where impact is believed to be low relative to the benefit provided.
 
+### Deprecation
+
+Certain fields or features may be marked **Deprecated**.
+These fields and features remain part of the specification and can be used like any other field or feature.
+However, OpenAPI Description authors should use newer fields and features documented to replace the deprecated ones whenever possible.
+
+At this time, such elements are expected to remain part of the OAS until the next major version, although a future minor version of this specification may define a policy for later removal of deprecated elements.
+
 ### Format
 
-An OpenAPI Document that conforms to the OpenAPI Specification is itself a JSON object, which may be represented either in JSON or YAML format.
-
-For example, if a field has an array value, the JSON array representation will be used:
-
-```json
-{
-  "field": [1, 2, 3]
-}
-```
+An OpenAPI Document that conforms to the OpenAPI Specification is itself a JSON object, which may be represented either in [[RFC8259|JSON]] or [[YAML|YAML]] format.
+Examples in this specification will be shown in YAML for brevity.
 
 All field names in the specification are **case sensitive**.
 This includes all fields that are used as keys in a map, except where explicitly noted that keys are **case insensitive**.
@@ -131,7 +189,7 @@ It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or 
 
 #### Parsing Documents
 
-In order to properly handle [Schema Objects](#schema-object), OAS 3.1 inherits the parsing requirements of [JSON Schema Specification Draft 2020-12](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
+In order to properly handle [Schema Objects](#schema-object), OAS 3.1 inherits the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
 
 This includes a requirement to parse complete documents before deeming a Schema Object reference to be unresolvable, in order to detect keywords that might provide the reference target or impact the determination of the appropriate base URI.
 
@@ -176,7 +234,7 @@ In some cases, an unambiguous URI-based alternative is available, and OAD author
 | [Security Requirement Object](#security-requirement-object) `{name}` | [Security Scheme Object](#security-scheme-object) name under the [Components Object](#components-object) | _n/a_ |
 | [Discriminator Object](#discriminator-object) `mapping` _(implicit, or explicit name syntax)_ | [Schema Object](#schema-object) name under the Components Object | `mapping` _(explicit URI syntax)_ |
 | [Operation Object](#operation-object) `tags` | [Tag Object](#tag-object) `name` (in the [OpenAPI Object](#openapi-object)'s `tags` array) | _n/a_ |
-| [Link Object](#link-object) `operationId` | [Path Item Object](#path-item-object) `operationId` | `operationRef` |
+| [Link Object](#link-object) `operationId` | [Operation Object](#operation-object) `operationId` | `operationRef` |
 
 A fifth implicit connection involves appending the templated URL paths of the [Paths Object](#paths-object) to the appropriate [Server Object](#server-object)'s `url` field.
 This is unambiguous because only the entry document's Paths Object contributes URLs to the described API.
@@ -194,32 +252,32 @@ This allows Security Scheme Objects and Tag Objects to be defined next to the AP
 
 The interface approach can also work for Discriminator Objects and Schema Objects, but it is also possible to keep the Discriminator Object's behavior within a single document using the relative URI-reference syntax of `mapping`.
 
-There are no URI-based alternatives for the Security Requirement Object or for the Operation Object's `tags` field.
-These limitations are expected to be addressed in a future release.
+There are no URI-based alternatives for the Operation Object's `tags` field.
+OAD authors are advised to use external solutions such as the OpenAPI Initiative's Overlay Specification to simulate sharing [Tag Objects](#tag-object) across multiple documents.
 
 See [Appendix F: Resolving Security Requirements in a Referenced Document](#appendix-f-resolving-security-requirements-in-a-referenced-document) for an example of the possible resolutions, including which one is recommended by this section.
-The behavior for Discrimator Object non-URI mappings and for the Operation Object's `tags` field operate on the same principles.
+The behavior for Discriminator Object non-URI mappings and for the Operation Object's `tags` field operate on the same principles.
 
 Note that no aspect of implicit connection resolution changes how [URIs are resolved](#relative-references-in-api-description-uris), or restricts their possible targets.
 
 ### Data Types
 
-Data types in the OAS are based on the types defined by the [JSON Schema Validation Specification Draft 2020-12](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-validation-00#section-6.1.1):
+Data types in the OAS are based on the types defined by the [JSON Schema Validation Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-6.1.1):
 "null", "boolean", "object", "array", "number", "string", or "integer".
 Models are defined using the [Schema Object](#schema-object), which is a superset of the JSON Schema Specification Draft 2020-12.
 
 JSON Schema keywords and `format` values operate on JSON "instances" which may be one of the six JSON data types, "null", "boolean", "object", "array", "number", or "string", with certain keywords and formats only applying to a specific type. For example, the `pattern` keyword and the `date-time` format only apply to strings, and treat any instance of the other five types as _automatically valid._ This means JSON Schema keywords and formats do **NOT** implicitly require the expected type. Use the `type` keyword to explicitly constrain the type.
 
-Note that the `type` keyword allows `"integer"` as a value for convenience, but keyword and format applicability does not recognize integers as being of a distinct JSON type from other numbers because [[RFC7159|JSON]] itself does not make that distinction. Since there is no distinct JSON integer type, JSON Schema defines integers mathematically. This means that both `1` and `1.0` are [equivalent](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-4.2.2), and are both considered to be integers.
+Note that the `type` keyword allows `"integer"` as a value for convenience, but keyword and format applicability does not recognize integers as being of a distinct JSON type from other numbers because [[RFC8259|JSON]] itself does not make that distinction. Since there is no distinct JSON integer type, JSON Schema defines integers mathematically. This means that both `1` and `1.0` are [equivalent](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.2.2), and are both considered to be integers.
 
 #### Data Type Format
 
-As defined by the [JSON Schema Validation specification](https://tools.ietf.org/html/draft-bhutton-json-schema-validation-00#section-7.3), data types can have an optional modifier keyword: `format`. As described in that specification, `format` is treated as a non-validating annotation by default; the ability to validate `format` varies across implementations.
+As defined by the [JSON Schema Validation specification](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-7.3), data types can have an optional modifier keyword: `format`. As described in that specification, `format` is treated as a non-validating annotation by default; the ability to validate `format` varies across implementations.
 
 The OpenAPI Initiative also hosts a [Format Registry](https://spec.openapis.org/registry/format/) for formats defined by OAS users and other specifications. Support for any registered format is strictly OPTIONAL, and support for one registered format does not imply support for any others.
 
 Types that are not accompanied by a `format` keyword follow the type definition in the JSON Schema. Tools that do not recognize a specific `format` MAY default back to the `type` alone, as if the `format` is not specified.
-For the purpose of [JSON Schema validation](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-validation-00#section-7.1), each format should specify the set of JSON data types for which it applies. In this registry, these types are shown in the "JSON Data Type" column.
+For the purpose of [JSON Schema validation](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-7.1), each format should specify the set of JSON data types for which it applies. In this registry, these types are shown in the "JSON Data Type" column.
 
 The formats defined by the OAS are:
 
@@ -244,9 +302,9 @@ In the following table showing how to use Schema Object keywords for binary data
 
 | Keyword | Raw | Encoded | Comments |
 | ---- | ---- | ---- | ---- |
-| `type` | _omit_ | `string` | raw binary is [outside of `type`](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-4.2.3) |
+| `type` | _omit_ | `string` | raw binary is [outside of `type`](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.2.3) |
 | `contentMediaType` | `image/png` | `image/png` | can sometimes be omitted if redundant (see below) |
-| `contentEncoding` | _omit_ | `base64`&nbsp;or&nbsp;`base64url` | other encodings are [allowed](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-validation-00#section-8.3) |
+| `contentEncoding` | _omit_ | `base64`&nbsp;or&nbsp;`base64url` | other encodings are [allowed](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-8.3) |
 
 Note that the encoding indicated by `contentEncoding`, which inflates the size of data in order to represent it as 7-bit ASCII text, is unrelated to HTTP's `Content-Encoding` header, which indicates whether and how a message body has been compressed and is applied after all content serialization described in this section has occurred. Since HTTP allows unencoded binary message bodies, there is no standardized HTTP header for indicating base64 or similar encoding of an entire message body.
 
@@ -259,7 +317,7 @@ The `contentMediaType` keyword is redundant if the media type is already set:
 
 If the [Schema Object](#schema-object) will be processed by a non-OAS-aware JSON Schema implementation, it may be useful to include `contentMediaType` even if it is redundant. However, if `contentMediaType` contradicts a relevant Media Type Object or Encoding Object, then `contentMediaType` SHALL be ignored.
 
-The `maxLength` keyword MAY be used to set an expected upper bound on the length of a streaming payload. The keyword can be applied to either string data, including encoded binary data, or to unencoded binary data. For unencoded binary, the length is the number of octets.
+See [Complete vs Streaming Content](#complete-vs-streaming-content) for guidance on streaming binary payloads.
 
 ##### Migrating binary descriptions from OAS 3.0
 
@@ -281,19 +339,29 @@ OpenAPI Description authors SHOULD consider how text using such extensions will 
 ### Relative References in API Description URIs
 
 URIs used as references within an OpenAPI Description, or to external documentation or other supplementary information such as a license, are resolved as _identifiers_, and described by this specification as **_URIs_**.
-As noted under [Parsing Documents](#parsing-documents), this specification inherits JSON Schema Specification Draft 2020-12's requirements for [loading documents](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-9) and associating them with their expected URIs, which might not match their current location.
+As noted under [Parsing Documents](#parsing-documents), this specification inherits JSON Schema Specification Draft 2020-12's requirements for [loading documents](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9) and associating them with their expected URIs, which might not match their current location.
 This feature is used both for working in development or test environments without having to change the URIs, and for working within restrictive network configurations or security policies.
 
 Note that some URI fields are named `url` for historical reasons, but the descriptive text for those fields uses the correct "URI" terminology.
 
 Unless specified otherwise, all fields that are URIs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2).
 
-Relative references in [Schema Objects](#schema-object), including any that appear as `$id` values, use the nearest parent `$id` as a Base URI, as described by [JSON Schema Specification Draft 2020-12](https://tools.ietf.org/html/draft-bhutton-json-schema-00#section-8.2).
+#### Establishing the Base URI
 
-Relative URI references in other Objects, and in Schema Objects where no parent schema contains an `$id`, MUST be resolved using the referring document's base URI, which is determined in accordance with [[RFC3986]] [Section 5.1.2 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.2).
-In practice, this is usually the retrieval URI of the document, which MAY be determined based on either its current actual location or a user-supplied expected location.
+Relative URI references are resolved using the appropriate base URI, which MUST be determined in accordance with [[RFC3986]] [Section 5.1.1 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.1) and, for Schema objects, [JSON Schema draft 2020-12 Section 8.2](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8.2), as illustrated by the examles in [Appendix G: Examples of Base URI Determination and Reference Resolution](#appendix-g-examples-of-base-uri-determination-and-reference-resolution).
+
+If `$self` is a relative URI-reference, it is resolved agains the next possible base URI source ([[RFC3986]] [Section 5.1.2 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.2)) before being used for the resolution of other relative URI-references.
+
+The most common base URI source that is used in the event of a missing or relative `$self` (in the [OpenAPI Object](#openapi-object)) and (for [Schema Object](#schema-object)) `$id` is the retrieval URI.
+Implementations MAY support document retrieval, although see the [Security Considerations](#security-considerations) sections for additional guidance.
+Even if retrieval is supported, it may be impossible due to network configuration or server unavailability (including the server hosting an older version while a new version is in development), or undesirable due to performance impacts.
+Therefore, all implementations SHOULD allow users to provide the intended retrieval URI for each document so that references can be resolved as if retrievals were performed.
+
+#### Resolving URI fragments
 
 If a URI contains a fragment identifier, then the fragment should be resolved per the fragment resolution mechanism of the referenced document. If the representation of the referenced document is JSON or YAML, then the fragment identifier SHOULD be interpreted as a JSON-Pointer as per [RFC6901](https://tools.ietf.org/html/rfc6901).
+
+#### Relative URI References in CommonMark Fields
 
 Relative references in CommonMark hyperlinks are resolved in their rendered context, which might differ from the context of the API description.
 
@@ -302,7 +370,28 @@ Relative references in CommonMark hyperlinks are resolved in their rendered cont
 API endpoints are by definition accessed as locations, and are described by this specification as **_URLs_**.
 
 Unless specified otherwise, all fields that are URLs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2).
+
+Because the API Is a distinct entity from the OpenAPI Document, RFC3986's base URI rules for the OpenAPI Document do not apply.
 Unless specified otherwise, relative references are resolved using the URLs defined in the [Server Object](#server-object) as a Base URL. Note that these themselves MAY be relative to the referring document.
+
+#### Examples of API Base URL Determination
+
+Assume a retrieval URI of `https://device1.example.com` for the following OpenAPI Document:
+
+```YAML
+openapi: 3.2.0
+$self: https://apidescriptions.example.com/foo
+info:
+  title: Example API
+  version: 1.0
+servers:
+- url: .
+  description: The production API on this device
+- url: ./test
+  description: The test API on this device
+```
+
+For API URLs the `$self` field, which identifies the OpenAPI Document, is ignored and the retrieval URI is used instead. This produces a normalized production URL of `https://device1.example.com`, and a normalized test URL of `https://device1.example.com/test`.
 
 ### Schema
 
@@ -322,6 +411,7 @@ This is the root object of the [OpenAPI Description](#openapi-description).
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="oas-version"></a>openapi | `string` | **REQUIRED**. This string MUST be the [version number](#versions) of the OpenAPI Specification that the OpenAPI Document uses. The `openapi` field SHOULD be used by tooling to interpret the OpenAPI Document. This is _not_ related to the API [`info.version`](#info-version) string. |
+| <a name="oas-self"></a>$self | `string` | This string MUST be in the form of a URI-reference as defined by [[RFC3986]] [Section 4.1](https://www.rfc-editor.org/rfc/rfc3986#section-4.1). The `$self` field provides the self-assigned URI of this document, which also serves as its base URI in accordance with [[RFC3986]] [Section 5.1.1](https://www.rfc-editor.org/rfc/rfc3986#section-5.1.1). Implementations MUST support identifying the targets of [API description URIs](#relative-references-in-api-description-uris) using the URI defined by this field when it is present. See [Establishing the Base URI](#establishing-the-base-uri) for the base URI behavior when `$self` is absent or relative, and see [Appendix G]((#appendix-g-examples-of-base-uri-determination-and-reference-resolution)) for examples of using `$self` to resolve references. |
 | <a name="oas-info"></a>info | [Info Object](#info-object) | **REQUIRED**. Provides metadata about the API. The metadata MAY be used by tooling as required. |
 | <a name="oas-json-schema-dialect"></a> jsonSchemaDialect | `string` | The default value for the `$schema` keyword within [Schema Objects](#schema-object) contained within this OAS document. This MUST be in the form of a URI. |
 | <a name="oas-servers"></a>servers | [[Server Object](#server-object)] | An array of Server Objects, which provide connectivity information to a target server. If the `servers` field is not provided, or is an empty array, the default value would be a [Server Object](#server-object) with a [url](#server-url) value of `/`. |
@@ -333,6 +423,9 @@ This is the root object of the [OpenAPI Description](#openapi-description).
 | <a name="oas-external-docs"></a>externalDocs | [External Documentation Object](#external-documentation-object) | Additional external documentation. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
+
+To ensure interoperability, references MUST use the target document's `$self` URI if the `$self` field is present.
+Implementations MAY choose to support referencing by other URIs such as the retrieval URI even when `$self` is present, however this behavior is not interoperable and relying on it is NOT RECOMMENDED.
 
 #### Info Object
 
@@ -354,25 +447,6 @@ The metadata MAY be used by the clients if needed, and MAY be presented in editi
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
 ##### Info Object Example
-
-```json
-{
-  "title": "Example Pet Store App",
-  "summary": "A pet store manager.",
-  "description": "This is an example server for a pet store.",
-  "termsOfService": "https://example.com/terms/",
-  "contact": {
-    "name": "API Support",
-    "url": "https://www.example.com/support",
-    "email": "support@example.com"
-  },
-  "license": {
-    "name": "Apache 2.0",
-    "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
-  },
-  "version": "1.0.1"
-}
-```
 
 ```yaml
 title: Example Pet Store App
@@ -405,14 +479,6 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 ##### Contact Object Example
 
-```json
-{
-  "name": "API Support",
-  "url": "https://www.example.com/support",
-  "email": "support@example.com"
-}
-```
-
 ```yaml
 name: API Support
 url: https://www.example.com/support
@@ -435,13 +501,6 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 ##### License Object Example
 
-```json
-{
-  "name": "Apache 2.0",
-  "identifier": "Apache-2.0"
-}
-```
-
 ```yaml
 name: Apache 2.0
 identifier: Apache-2.0
@@ -455,89 +514,48 @@ An object representing a Server.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="server-url"></a>url | `string` | **REQUIRED**. A URL to the target host. This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the location where the document containing the Server Object is being served. Variable substitutions will be made when a variable is named in `{`braces`}`. |
-| <a name="server-description"></a>description | `string` | An optional string describing the host designated by the URL. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="server-url"></a>url | `string` | **REQUIRED**. A URL to the target host. This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the location where the document containing the Server Object is being served. Query and fragment MUST NOT be part of this URL. Variable substitutions will be made when a variable is named in `{`braces`}`. |
+| <a name="server-summary"></a>summary | `string` | A short summary of the purpose of the server. |
+| <a name="server-description"></a>description | `string` | A longer description of the host designated by the URL. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="server-name"></a>name | `string` | An optional unique string to refer to the host designated by the URL. |
 | <a name="server-variables"></a>variables | Map[`string`, [Server Variable Object](#server-variable-object)] | A map between a variable name and its value. The value is used for substitution in the server's URL template. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
+
+See [Examples of API Base URL Determination](#examples-of-api-base-url-determination) for examples of resolving relative server URLs.
 
 ##### Server Object Example
 
 A single server would be described as:
 
-```json
-{
-  "url": "https://development.gigantic-server.com/v1",
-  "description": "Development server"
-}
-```
-
 ```yaml
 url: https://development.gigantic-server.com/v1
 description: Development server
+name: dev
 ```
 
 The following shows how multiple servers can be described, for example, at the OpenAPI Object's [`servers`](#oas-servers):
-
-```json
-{
-  "servers": [
-    {
-      "url": "https://development.gigantic-server.com/v1",
-      "description": "Development server"
-    },
-    {
-      "url": "https://staging.gigantic-server.com/v1",
-      "description": "Staging server"
-    },
-    {
-      "url": "https://api.gigantic-server.com/v1",
-      "description": "Production server"
-    }
-  ]
-}
-```
 
 ```yaml
 servers:
   - url: https://development.gigantic-server.com/v1
     description: Development server
+    name: dev
   - url: https://staging.gigantic-server.com/v1
     description: Staging server
+    name: staging
   - url: https://api.gigantic-server.com/v1
     description: Production server
+    name: prod
 ```
 
 The following shows how variables can be used for a server configuration:
-
-```json
-{
-  "servers": [
-    {
-      "url": "https://{username}.gigantic-server.com:{port}/{basePath}",
-      "description": "The production API server",
-      "variables": {
-        "username": {
-          "default": "demo",
-          "description": "A user-specific subdomain. Use `demo` for a free sandbox environment."
-        },
-        "port": {
-          "enum": ["8443", "443"],
-          "default": "8443"
-        },
-        "basePath": {
-          "default": "v2"
-        }
-      }
-    }
-  ]
-}
-```
 
 ```yaml
 servers:
   - url: https://{username}.gigantic-server.com:{port}/{basePath}
     description: The production API server
+    name: prod
     variables:
       username:
         # note! no enum here means it is an open value
@@ -557,13 +575,41 @@ servers:
 
 An object representing a Server Variable for server URL template substitution.
 
+The server URL templating is defined by the following [ABNF](https://tools.ietf.org/html/rfc5234) syntax.
+
+```abnf
+server-url-template  = 1*( literals / server-variable )
+server-variable      = "{" server-variable-name "}"
+server-variable-name = 1*( %x00-7A / %x7C / %x7E-10FFFF ) ; every UTF8 character except { and }
+
+literals       = 1*( %x21 / %x23-24 / %x26-3B / %x3D / %x3F-5B
+               / %x5D / %x5F / %x61-7A / %x7E / ucschar / iprivate
+               / pct-encoded)
+                    ; any Unicode character except: CTL, SP,
+                    ;  DQUOTE, "%" (aside from pct-encoded),
+                    ;  "<", ">", "\", "^", "`", "{", "|", "}"
+pct-encoded    =  "%" HEXDIG HEXDIG
+ucschar        =  %xA0-D7FF / %xF900-FDCF / %xFDF0-FFEF
+               /  %x10000-1FFFD / %x20000-2FFFD / %x30000-3FFFD
+               /  %x40000-4FFFD / %x50000-5FFFD / %x60000-6FFFD
+               /  %x70000-7FFFD / %x80000-8FFFD / %x90000-9FFFD
+               /  %xA0000-AFFFD / %xB0000-BFFFD / %xC0000-CFFFD
+               /  %xD0000-DFFFD / %xE1000-EFFFD
+iprivate       =  %xE000-F8FF / %xF0000-FFFFD / %x100000-10FFFD
+```
+
+Here, `literals`, `pct-encoded`, `ucschar` and `iprivate` definitions are taken from [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570), incorporating the corrections specified in [Errata 6937](https://www.rfc-editor.org/errata/eid6937) for `literals`.
+
+See the [Paths Object](#paths-object) for guidance on constructing full request URLs.
+
 ##### Fixed Fields
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="server-variable-enum"></a>enum | [`string`] | An enumeration of string values to be used if the substitution options are from a limited set. The array MUST NOT be empty. |
 | <a name="server-variable-default"></a>default | `string` | **REQUIRED**. The default value to use for substitution, which SHALL be sent if an alternate value is _not_ supplied. If the [`enum`](#server-variable-enum) is defined, the value MUST exist in the enum's values. Note that this behavior is different from the [Schema Object](#schema-object)'s `default` keyword, which documents the receiver's behavior rather than inserting the value into the data. |
-| <a name="server-variable-description"></a>description | `string` | An optional description for the server variable. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="server-variable-summary"></a>summary | `string` | A short summary of the purpose of the server variable. |
+| <a name="server-variable-description"></a>description | `string` | A longer description for the server variable. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -582,7 +628,7 @@ All objects defined within the Components Object will have no effect on the API 
 | <a name="components-examples"></a> examples | Map[`string`, [Example Object](#example-object) \| [Reference Object](#reference-object)] | An object to hold reusable [Example Objects](#example-object). |
 | <a name="components-request-bodies"></a> requestBodies | Map[`string`, [Request Body Object](#request-body-object) \| [Reference Object](#reference-object)] | An object to hold reusable [Request Body Objects](#request-body-object). |
 | <a name="components-headers"></a> headers | Map[`string`, [Header Object](#header-object) \| [Reference Object](#reference-object)] | An object to hold reusable [Header Objects](#header-object). |
-| <a name="security-scheme-object"></a> securitySchemes | Map[`string`, [Security Scheme Object](#security-scheme-object) \| [Reference Object](#reference-object)] | An object to hold reusable [Security Scheme Objects](#security-scheme-object). |
+| <a name="components-security-schemes"></a> securitySchemes | Map[`string`, [Security Scheme Object](#security-scheme-object) \| [Reference Object](#reference-object)] | An object to hold reusable [Security Scheme Objects](#security-scheme-object). |
 | <a name="components-links"></a> links | Map[`string`, [Link Object](#link-object) \| [Reference Object](#reference-object)] | An object to hold reusable [Link Objects](#link-object). |
 | <a name="components-callbacks"></a> callbacks | Map[`string`, [Callback Object](#callback-object) \| [Reference Object](#reference-object)] | An object to hold reusable [Callback Objects](#callback-object). |
 | <a name="components-path-items"></a> pathItems | Map[`string`, [Path Item Object](#path-item-object)] | An object to hold reusable [Path Item Objects](#path-item-object). |
@@ -602,108 +648,6 @@ my.org.User
 ```
 
 ##### Components Object Example
-
-```json
-"components": {
-  "schemas": {
-    "GeneralError": {
-      "type": "object",
-      "properties": {
-        "code": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "message": {
-          "type": "string"
-        }
-      }
-    },
-    "Category": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "Tag": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "name": {
-          "type": "string"
-        }
-      }
-    }
-  },
-  "parameters": {
-    "skipParam": {
-      "name": "skip",
-      "in": "query",
-      "description": "number of items to skip",
-      "required": true,
-      "schema": {
-        "type": "integer",
-        "format": "int32"
-      }
-    },
-    "limitParam": {
-      "name": "limit",
-      "in": "query",
-      "description": "max records to return",
-      "required": true,
-      "schema" : {
-        "type": "integer",
-        "format": "int32"
-      }
-    }
-  },
-  "responses": {
-    "NotFound": {
-      "description": "Entity not found."
-    },
-    "IllegalInput": {
-      "description": "Illegal input for operation."
-    },
-    "GeneralError": {
-      "description": "General Error",
-      "content": {
-        "application/json": {
-          "schema": {
-            "$ref": "#/components/schemas/GeneralError"
-          }
-        }
-      }
-    }
-  },
-  "securitySchemes": {
-    "api_key": {
-      "type": "apiKey",
-      "name": "api-key",
-      "in": "header"
-    },
-    "petstore_auth": {
-      "type": "oauth2",
-      "flows": {
-        "implicit": {
-          "authorizationUrl": "https://example.org/api/oauth/dialog",
-          "scopes": {
-            "write:pets": "modify pets in your account",
-            "read:pets": "read your pets"
-          }
-        }
-      }
-    }
-  }
-}
-```
 
 ```yaml
 components:
@@ -813,31 +757,6 @@ The following may lead to ambiguous resolution:
 
 ##### Paths Object Example
 
-```json
-{
-  "/pets": {
-    "get": {
-      "description": "Returns all pets from the system that the user has access to",
-      "responses": {
-        "200": {
-          "description": "A list of pets.",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/components/schemas/pet"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-```
-
 ```yaml
 /pets:
   get:
@@ -874,62 +793,14 @@ The path itself is still exposed to the documentation viewer but they will not k
 | <a name="path-item-head"></a>head | [Operation Object](#operation-object) | A definition of a HEAD operation on this path. |
 | <a name="path-item-patch"></a>patch | [Operation Object](#operation-object) | A definition of a PATCH operation on this path. |
 | <a name="path-item-trace"></a>trace | [Operation Object](#operation-object) | A definition of a TRACE operation on this path. |
+| <a name="path-item-query"></a>query | [Operation Object](#operation-object) | A definition of a QUERY operation, as defined in the most recent IETF draft ([draft-ietf-httpbis-safe-method-w-body-08](https://www.ietf.org/archive/id/draft-ietf-httpbis-safe-method-w-body-08.html) as of this writing) or its RFC successor, on this path. |
+| <a name="path-item-additional-operations"></a>additionalOperations | Map[`string`, [Operation Object](#operation-object)] | A map of additional operations on this path. The map key is the HTTP method with the same capitalization that is to be sent in the request. This map MUST NOT contain any entry for the methods that can be defined by other Operation Object fields (e.g. no `POST` entry, as the Operation Object field `post` is used for this method). |
 | <a name="path-item-servers"></a>servers | [[Server Object](#server-object)] | An alternative `servers` array to service all operations in this path. If a `servers` array is specified at the [OpenAPI Object](#oas-servers) level, it will be overridden by this value. |
 | <a name="path-item-parameters"></a>parameters | [[Parameter Object](#parameter-object) \| [Reference Object](#reference-object)] | A list of parameters that are applicable for all the operations described under this path. These parameters can be overridden at the operation level, but cannot be removed there. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameter-name) and [location](#parameter-in). The list can use the [Reference Object](#reference-object) to link to parameters that are defined in the [OpenAPI Object's `components.parameters`](#components-parameters). |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
 ##### Path Item Object Example
-
-```json
-{
-  "get": {
-    "description": "Returns pets based on ID",
-    "summary": "Find pets by ID",
-    "operationId": "getPetsById",
-    "responses": {
-      "200": {
-        "description": "pet response",
-        "content": {
-          "*/*": {
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/Pet"
-              }
-            }
-          }
-        }
-      },
-      "default": {
-        "description": "error payload",
-        "content": {
-          "text/html": {
-            "schema": {
-              "$ref": "#/components/schemas/ErrorModel"
-            }
-          }
-        }
-      }
-    }
-  },
-  "parameters": [
-    {
-      "name": "id",
-      "in": "path",
-      "description": "ID of pet to use",
-      "required": true,
-      "schema": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "style": "simple"
-    }
-  ]
-}
-```
 
 ```yaml
 get:
@@ -961,6 +832,26 @@ parameters:
       items:
         type: string
     style: simple
+additionalOperations:
+  COPY:
+    description: Copies pet information based on ID
+    summary: Copies pets by ID
+    operationId: copyPetsById
+    responses:
+      '200':
+        description: pet response
+        content:
+          '*/*':
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Pet'
+      default:
+        description: error payload
+        content:
+          text/html:
+            schema:
+              $ref: '#/components/schemas/ErrorModel'
 ```
 
 #### Operation Object
@@ -977,7 +868,7 @@ Describes a single API operation on a path.
 | <a name="operation-external-docs"></a>externalDocs | [External Documentation Object](#external-documentation-object) | Additional external documentation for this operation. |
 | <a name="operation-id"></a>operationId | `string` | Unique string used to identify the operation. The id MUST be unique among all operations described in the API. The operationId value is **case-sensitive**. Tools and libraries MAY use the operationId to uniquely identify an operation, therefore, it is RECOMMENDED to follow common programming naming conventions. |
 | <a name="operation-parameters"></a>parameters | [[Parameter Object](#parameter-object) \| [Reference Object](#reference-object)] | A list of parameters that are applicable for this operation. If a parameter is already defined at the [Path Item](#path-item-parameters), the new definition will override it but can never remove it. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameter-name) and [location](#parameter-in). The list can use the [Reference Object](#reference-object) to link to parameters that are defined in the [OpenAPI Object's `components.parameters`](#components-parameters). |
-| <a name="operation-request-body"></a>requestBody | [Request Body Object](#request-body-object) \| [Reference Object](#reference-object) | The request body applicable for this operation. The `requestBody` is fully supported in HTTP methods where the HTTP 1.1 specification [RFC7231](https://tools.ietf.org/html/rfc7231#section-4.3.1) has explicitly defined semantics for request bodies. In other cases where the HTTP spec is vague (such as [GET](https://tools.ietf.org/html/rfc7231#section-4.3.1), [HEAD](https://tools.ietf.org/html/rfc7231#section-4.3.2) and [DELETE](https://tools.ietf.org/html/rfc7231#section-4.3.5)), `requestBody` is permitted but does not have well-defined semantics and SHOULD be avoided if possible. |
+| <a name="operation-request-body"></a>requestBody | [Request Body Object](#request-body-object) \| [Reference Object](#reference-object) | The request body applicable for this operation. The `requestBody` is fully supported in HTTP methods where the HTTP specification [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3) has explicitly defined semantics for request bodies. In other cases where the HTTP spec discourages message content (such as [GET](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1) and [DELETE](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.5)), `requestBody` is permitted but does not have well-defined semantics and SHOULD be avoided if possible. |
 | <a name="operation-responses"></a>responses | [Responses Object](#responses-object) | The list of possible responses as they are returned from executing this operation. |
 | <a name="operation-callbacks"></a>callbacks | Map[`string`, [Callback Object](#callback-object) \| [Reference Object](#reference-object)] | A map of possible out-of band callbacks related to the parent operation. The key is a unique identifier for the Callback Object. Each value in the map is a [Callback Object](#callback-object) that describes a request that may be initiated by the API provider and the expected responses. |
 | <a name="operation-deprecated"></a>deprecated | `boolean` | Declares this operation to be deprecated. Consumers SHOULD refrain from usage of the declared operation. Default value is `false`. |
@@ -987,66 +878,6 @@ Describes a single API operation on a path.
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
 ##### Operation Object Example
-
-```json
-{
-  "tags": ["pet"],
-  "summary": "Updates a pet in the store with form data",
-  "operationId": "updatePetWithForm",
-  "parameters": [
-    {
-      "name": "petId",
-      "in": "path",
-      "description": "ID of pet that needs to be updated",
-      "required": true,
-      "schema": {
-        "type": "string"
-      }
-    }
-  ],
-  "requestBody": {
-    "content": {
-      "application/x-www-form-urlencoded": {
-        "schema": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "description": "Updated name of the pet",
-              "type": "string"
-            },
-            "status": {
-              "description": "Updated status of the pet",
-              "type": "string"
-            }
-          },
-          "required": ["status"]
-        }
-      }
-    }
-  },
-  "responses": {
-    "200": {
-      "description": "Pet updated.",
-      "content": {
-        "application/json": {},
-        "application/xml": {}
-      }
-    },
-    "405": {
-      "description": "Method Not Allowed",
-      "content": {
-        "application/json": {},
-        "application/xml": {}
-      }
-    }
-  },
-  "security": [
-    {
-      "petstore_auth": ["write:pets", "read:pets"]
-    }
-  ]
-}
-```
 
 ```yaml
 tags:
@@ -1099,19 +930,13 @@ Allows referencing an external resource for extended documentation.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
+| <a name="external-doc-summary"></a>summary | `string` | A short summary of the purpose of the target documentation. |
 | <a name="external-doc-description"></a>description | `string` | A description of the target documentation. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="external-doc-url"></a>url | `string` | **REQUIRED**. The URI for the target documentation. This MUST be in the form of a URI. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
 ##### External Documentation Object Example
-
-```json
-{
-  "description": "Find more info here",
-  "url": "https://example.com"
-}
-```
 
 ```yaml
 description: Find more info here
@@ -1131,8 +956,9 @@ See [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for a detail
 There are four possible parameter locations specified by the `in` field:
 
 * path - Used together with [Path Templating](#path-templating), where the parameter value is actually part of the operation's URL. This does not include the host or base path of the API. For example, in `/items/{itemId}`, the path parameter is `itemId`.
-* query - Parameters that are appended to the URL. For example, in `/items?id=###`, the query parameter is `id`.
-* header - Custom headers that are expected as part of the request. Note that [RFC7230](https://tools.ietf.org/html/rfc7230#section-3.2) states header names are case insensitive.
+* query - Parameters that are appended to the URL. For example, in `/items?id=###`, the query parameter is `id`; MUST NOT appear in the same operation as an `in: "querystring"` parameter.
+* querystring - A parameter that treats the entire URL query string as a value which MUST be specified using the `content` field, most often with media type `application/x-www-form-urlencoded` using [Encoding Objects](#encoding-object) in the same way as with request bodies of that media type; MUST NOT appear more than once, and MUST NOT appear in the same operation with any `in: "query"` parameters.
+* header - Custom headers that are expected as part of the request. Note that [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.1) states header names are case insensitive.
 * cookie - Used to pass a specific cookie value to the API.
 
 ##### Fixed Fields
@@ -1147,12 +973,13 @@ These fields MAY be used with either `content` or `schema`.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="parameter-name"></a>name | `string` | **REQUIRED**. The name of the parameter. Parameter names are _case sensitive_. <ul><li>If [`in`](#parameter-in) is `"path"`, the `name` field MUST correspond to a template expression occurring within the [path](#paths-path) field in the [Paths Object](#paths-object). See [Path Templating](#path-templating) for further information.<li>If [`in`](#parameter-in) is `"header"` and the `name` field is `"Accept"`, `"Content-Type"` or `"Authorization"`, the parameter definition SHALL be ignored.<li>For all other cases, the `name` corresponds to the parameter name used by the [`in`](#parameter-in) field.</ul> |
-| <a name="parameter-in"></a>in | `string` | **REQUIRED**. The location of the parameter. Possible values are `"query"`, `"header"`, `"path"` or `"cookie"`. |
+| <a name="parameter-name"></a>name | `string` | **REQUIRED**. The name of the parameter. Parameter names are _case sensitive_. <ul><li>If [`in`](#parameter-in) is `"path"`, the `name` field MUST correspond to a template expression occurring within the [path](#paths-path) field in the [Paths Object](#paths-object). See [Path Templating](#path-templating) for further information.<li>If [`in`](#parameter-in) is `"header"` and the `name` field is `"Accept"`, `"Content-Type"` or `"Authorization"`, the parameter definition SHALL be ignored.<li>If `in` is `"querystring"`, or for [certain combinations](#style-examples) of [`style`](#parameter-style) and [`explode`](#parameter-explode), the value of `name` is not used in the parameter serialization.<li>For all other cases, the `name` corresponds to the parameter name used by the [`in`](#parameter-in) field.</ul> |
+| <a name="parameter-in"></a>in | `string` | **REQUIRED**. The location of the parameter. Possible values are `"query"`, `"querystring"`, `"header"`, `"path"` or `"cookie"`. |
+| <a name="parameter-summary"></a>summary | `string` | A short summary of the parameter. |
 | <a name="parameter-description"></a>description | `string` | A brief description of the parameter. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="parameter-required"></a>required | `boolean` | Determines whether this parameter is mandatory. If the [parameter location](#parameter-in) is `"path"`, this field is **REQUIRED** and its value MUST be `true`. Otherwise, the field MAY be included and its default value is `false`. |
 | <a name="parameter-deprecated"></a> deprecated | `boolean` | Specifies that a parameter is deprecated and SHOULD be transitioned out of usage. Default value is `false`. |
-| <a name="parameter-allow-empty-value"></a> allowEmptyValue | `boolean` | If `true`, clients MAY pass a zero-length string value in place of parameters that would otherwise be omitted entirely, which the server SHOULD interpret as the parameter being unused. Default value is `false`. If [`style`](#parameter-style) is used, and if [behavior is _n/a_ (cannot be serialized)](#style-examples), the value of `allowEmptyValue` SHALL be ignored. Interactions between this field and the parameter's [Schema Object](#schema-object) are implementation-defined. This field is valid only for `query` parameters. Use of this field is NOT RECOMMENDED, and it is likely to be removed in a later revision. |
+| <a name="parameter-allow-empty-value"></a> allowEmptyValue | `boolean` | If `true`, clients MAY pass a zero-length string value in place of parameters that would otherwise be omitted entirely, which the server SHOULD interpret as the parameter being unused. Default value is `false`. If [`style`](#parameter-style) is used, and if [behavior is _n/a_ (cannot be serialized)](#style-examples), the value of `allowEmptyValue` SHALL be ignored. Interactions between this field and the parameter's [Schema Object](#schema-object) are implementation-defined. This field is valid only for `query` parameters. <br><br>**Deprecated:** Use of this field is NOT RECOMMENDED, and it is likely to be removed in a later revision. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -1164,13 +991,15 @@ For simpler scenarios, a [`schema`](#parameter-schema) and [`style`](#parameter-
 When `example` or `examples` are provided in conjunction with the `schema` field, the example SHOULD match the specified schema and follow the prescribed serialization strategy for the parameter.
 The `example` and `examples` fields are mutually exclusive, and if either is present it SHALL _override_ any `example` in the schema.
 
+These fields MUST NOT be used with `in: "querystring"`.
+
 Serializing with `schema` is NOT RECOMMENDED for `in: "cookie"` parameters, `in: "header"` parameters that use HTTP header parameters (name=value pairs following a `;`) in their values, or `in: "header"` parameters where values might have non-URL-safe characters; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="parameter-style"></a>style | `string` | Describes how the parameter value will be serialized depending on the type of the parameter value. Default values (based on value of `in`): for `"query"` - `"form"`; for `"path"` - `"simple"`; for `"header"` - `"simple"`; for `"cookie"` - `"form"`. |
 | <a name="parameter-explode"></a>explode | `boolean` | When this is true, parameter values of type `array` or `object` generate separate parameters for each value of the array or key-value pair of the map. For other types of parameters this field has no effect. When [`style`](#parameter-style) is `"form"`, the default value is `true`. For all other styles, the default value is `false`. Note that despite `false` being the default for `deepObject`, the combination of `false` with `deepObject` is undefined. |
-| <a name="parameter-allow-reserved"></a>allowReserved | `boolean` | When this is true, parameter values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). Applications are still responsible for percent-encoding reserved characters that are [not allowed in the query string](https://datatracker.ietf.org/doc/html/rfc3986#section-3.4) (`[`, `]`, `#`), or have a special meaning in `application/x-www-form-urlencoded` (`-`, `&`, `+`); see Appendices [C](#appendix-c-using-rfc6570-based-serialization) and [E](#appendix-e-percent-encoding-and-form-media-types) for details. This field only applies to parameters with an `in` value of `query`. The default value is `false`. |
+| <a name="parameter-allow-reserved"></a>allowReserved | `boolean` | When this is true, parameter values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). Applications are still responsible for percent-encoding reserved characters that are not allowed by the rules of the `in` destination or media type, or are [not allowed in the path by this specification](#path-templating); see Appendices [C](#appendix-c-using-rfc6570-based-serialization) and [E](#appendix-e-percent-encoding-and-form-media-types) for details. The default value is `false`. |
 | <a name="parameter-schema"></a>schema | [Schema Object](#schema-object) | The schema defining the type used for the parameter. |
 | <a name="parameter-example"></a>example | Any | Example of the parameter's potential value; see [Working With Examples](#working-with-examples). |
 | <a name="parameter-examples"></a>examples | Map[ `string`, [Example Object](#example-object) \| [Reference Object](#reference-object)] | Examples of the parameter's potential value; see [Working With Examples](#working-with-examples). |
@@ -1181,6 +1010,8 @@ See also [Appendix C: Using RFC6570-Based Serialization](#appendix-c-using-rfc65
 
 For more complex scenarios, the [`content`](#parameter-content) field can define the media type and schema of the parameter, as well as give examples of its use.
 Using `content` with a `text/plain` media type is RECOMMENDED for `in: "header"` and `in: "cookie"` parameters where the `schema` strategy is not appropriate.
+
+For use with `in: "querystring"` and `application/x-www-form-urlencoded`, see [Encoding the `x-www-form-urlencoded` Media Type](#encoding-the-x-www-form-urlencoded-media-type).
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
@@ -1238,26 +1069,19 @@ The following table shows examples, as would be shown with the `example` or `exa
 | deepObject | false | _n/a_ | _n/a_ | _n/a_ | _n/a_ |
 | deepObject | true | _n/a_ | _n/a_ | _n/a_ | <span style="white-space: nowrap;">?color%5BR%5D=100&color%5BG%5D=200&color%5BB%5D=150</span> |
 
+##### Extending Support for Querystring Formats
+
+Many frameworks define query string syntax for complex values, such as appending array indices to parameter names or indicating multiple levels of of nested objects, which go well beyond the capabilities of the `deepObject` style.
+
+As these are not standards, and often contradict each other, the OAS does not attempt to support them directly.
+Two avenues are available for supporting such formats with `in: "querystring"`:
+
+* Use `content` and `text/plain` with a schema of `type: "string"` and define the format outside of OpenAPI.  While this requires more work to document and construct or parse the format, which is seen as a plain string from the OpenAPI perspective, it provides the easiest flexible option
+* Define a media type (which need not necessarily be [IANA-registered](https://www.rfc-editor.org/rfc/rfc6838.html)) and submit a registration for how it can be supported (using `in: "querystring"` and the `content` field) to the OpenAPI Initiative's [Media Type Registry](#media-type-registry).
+
 ##### Parameter Object Examples
 
 A header parameter with an array of 64-bit integer numbers:
-
-```json
-{
-  "name": "token",
-  "in": "header",
-  "description": "token to be passed as a header",
-  "required": true,
-  "schema": {
-    "type": "array",
-    "items": {
-      "type": "integer",
-      "format": "int64"
-    }
-  },
-  "style": "simple"
-}
-```
 
 ```yaml
 name: token
@@ -1274,18 +1098,6 @@ style: simple
 
 A path parameter of a string value:
 
-```json
-{
-  "name": "username",
-  "in": "path",
-  "description": "username to fetch",
-  "required": true,
-  "schema": {
-    "type": "string"
-  }
-}
-```
-
 ```yaml
 name: username
 in: path
@@ -1296,23 +1108,6 @@ schema:
 ```
 
 An optional query parameter of a string value, allowing multiple values by repeating the query parameter:
-
-```json
-{
-  "name": "id",
-  "in": "query",
-  "description": "ID of the object to fetch",
-  "required": false,
-  "schema": {
-    "type": "array",
-    "items": {
-      "type": "string"
-    }
-  },
-  "style": "form",
-  "explode": true
-}
-```
 
 ```yaml
 name: id
@@ -1329,20 +1124,6 @@ explode: true
 
 A free-form query parameter, allowing undefined parameters of a specific type:
 
-```json
-{
-  "in": "query",
-  "name": "freeForm",
-  "schema": {
-    "type": "object",
-    "additionalProperties": {
-      "type": "integer"
-    }
-  },
-  "style": "form"
-}
-```
-
 ```yaml
 in: query
 name: freeForm
@@ -1354,29 +1135,6 @@ style: form
 ```
 
 A complex parameter using `content` to define serialization:
-
-```json
-{
-  "in": "query",
-  "name": "coordinates",
-  "content": {
-    "application/json": {
-      "schema": {
-        "type": "object",
-        "required": ["lat", "long"],
-        "properties": {
-          "lat": {
-            "type": "number"
-          },
-          "long": {
-            "type": "number"
-          }
-        }
-      }
-    }
-  }
-}
-```
 
 ```yaml
 in: query
@@ -1395,6 +1153,39 @@ content:
           type: number
 ```
 
+A querystring parameter that uses JSON for the entire string (not as a single query parameter value):
+
+```yaml
+in: querystring
+name: json
+content:
+  application/json:
+    schema:
+      # Allow an arbitrary JSON object to keep
+      # the example simple
+      type: object
+```
+
+A querystring parameter that uses JSONPath:
+
+```yaml
+in: querystring
+name: sql
+content:
+  application/jsonpath:
+    schema:
+      type: string
+    example: $.a.b[1:1]
+```
+
+As there is not currently a defined mapping between the JSON Schema data model and JSONPath, the details of the string's allowed structure would need to be conveyed either in a human-readable `description` field, or through a mechanism outside of the OpenAPI Description, such as a JSON Schema for the data structure to be queried.
+
+Assuming a path of `/foo` and a server of `https://example.com`, the full URL incorporateing the value from the `example` field would be:
+
+```uri
+https://example.com/foo?%24.a.b%5B1%3A1%5D
+```
+
 #### Request Body Object
 
 Describes a single request body.
@@ -1403,8 +1194,9 @@ Describes a single request body.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="request-body-description"></a>description | `string` | A brief description of the request body. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
-| <a name="request-body-content"></a>content | Map[`string`, [Media Type Object](#media-type-object)] | **REQUIRED**. The content of the request body. The key is a media type or [media type range](https://tools.ietf.org/html/rfc7231#appendix-D) and the value describes it. For requests that match multiple keys, only the most specific key is applicable. e.g. `"text/plain"` overrides `"text/*"` |
+| <a name="request-body-summary"></a>summary | `string` | A short summary of the purpose of the request body. |
+| <a name="request-body-description"></a>description | `string` | A longer description of the request body. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="request-body-content"></a>content | Map[`string`, [Media Type Object](#media-type-object)] | **REQUIRED**. The content of the request body. The key is a media type or [media type range](https://www.rfc-editor.org/rfc/rfc9110.html#appendix-A) and the value describes it. For requests that match multiple keys, only the most specific key is applicable. e.g. `"text/plain"` overrides `"text/*"` |
 | <a name="request-body-required"></a>required | `boolean` | Determines if the request body is required in the request. Defaults to `false`. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
@@ -1412,52 +1204,6 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 ##### Request Body Examples
 
 A request body with a referenced schema definition.
-
-```json
-{
-  "description": "user to add to the system",
-  "content": {
-    "application/json": {
-      "schema": {
-        "$ref": "#/components/schemas/User"
-      },
-      "examples": {
-        "user": {
-          "summary": "User Example",
-          "externalValue": "https://foo.bar/examples/user-example.json"
-        }
-      }
-    },
-    "application/xml": {
-      "schema": {
-        "$ref": "#/components/schemas/User"
-      },
-      "examples": {
-        "user": {
-          "summary": "User example in XML",
-          "externalValue": "https://foo.bar/examples/user-example.xml"
-        }
-      }
-    },
-    "text/plain": {
-      "examples": {
-        "user": {
-          "summary": "User example in Plain text",
-          "externalValue": "https://foo.bar/examples/user-example.txt"
-        }
-      }
-    },
-    "*/*": {
-      "examples": {
-        "user": {
-          "summary": "User example in other format",
-          "externalValue": "https://foo.bar/examples/user-example.whatever"
-        }
-      }
-    }
-  }
-}
-```
 
 ```yaml
 description: user to add to the system
@@ -1490,7 +1236,8 @@ content:
 
 #### Media Type Object
 
-Each Media Type Object provides schema and examples for the media type identified by its key.
+Each Media Type Object describes content structured in accordance with the media type identified by its key.
+Multiple Media Type Objects can be used to describe content that can appear in any of several different media types.
 
 When `example` or `examples` are provided, the example SHOULD match the specified schema and be in the correct format as specified by the media type and its encoding.
 The `example` and `examples` fields are mutually exclusive, and if either is present it SHALL _override_ any `example` in the schema.
@@ -1500,49 +1247,115 @@ See [Working With Examples](#working-with-examples) for further guidance regardi
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="media-type-schema"></a>schema | [Schema Object](#schema-object) | The schema defining the content of the request, response, parameter, or header. |
+| <a name="media-type-schema"></a>schema | [Schema Object](#schema-object) | A schema describing the complete content of the request, response, parameter, or header. |
+| <a name="media-type-item-schema"></a>itemSchema | [Schema Object](#schema-object) | A schema describing each item within a [sequential media type](#sequential-media-types). |
 | <a name="media-type-example"></a>example | Any | Example of the media type; see [Working With Examples](#working-with-examples). |
 | <a name="media-type-examples"></a>examples | Map[ `string`, [Example Object](#example-object) \| [Reference Object](#reference-object)] | Examples of the media type; see [Working With Examples](#working-with-examples). |
-| <a name="media-type-encoding"></a>encoding | Map[`string`, [Encoding Object](#encoding-object)] | A map between a property name and its encoding information. The key, being the property name, MUST exist in the schema as a property. The `encoding` field SHALL only apply to [Request Body Objects](#request-body-object), and only when the media type is `multipart` or `application/x-www-form-urlencoded`. If no Encoding Object is provided for a property, the behavior is determined by the default values documented for the Encoding Object. |
+| <a name="media-type-encoding"></a>encoding | Map[`string`, [Encoding Object](#encoding-object)] | A map between a property name and its encoding information, as defined under [Encoding By Name](#encoding-by-name).  The `encoding` field SHALL only apply when the media type is `multipart` or `application/x-www-form-urlencoded`. If no Encoding Object is provided for a property, the behavior is determined by the default values documented for the Encoding Object. This field MUST NOT be present if `prefixEncoding` or `itemEncoding` are present. |
+| <a name="media-type-prefix-encoding"></a>prefixEncoding | [[Encoding Object](#encoding-object)] | An array of positional encoding information, as defined under [Encoding By Position](#encoding-by-position).  The `prefixEncoding` field SHALL only apply when the media type is `multipart`. If no Encoding Object is provided for a property, the behavior is determined by the default values documented for the Encoding Object. This field MUST NOT be present if `encoding` is present. |
+| <a name="media-type-item-encoding"></a>itemEncoding | [Encoding Object](#encoding-object) | A single Encoding Object that provides encoding information for multiple array items, as defined under [Encoding By Position](#encoding-by-position). The `itemEncoding` field SHALL only apply when the media type is `multipart`. If no Encoding Object is provided for a property, the behavior is determined by the default values documented for the Encoding Object. This field MUST NOT be present if `encoding` is present. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
+See also the [Media Type Registry](#media-type-registry).
+
+##### Complete vs Streaming Content
+
+The `schema` field MUST be applied to the complete content, as defined by the media type and the context ([Request Body Object](#request-body-object), [Response Object](#response-object), [Parameter Object](#parameter-object), or [Header Object](#header-object).
+Because this requires loading the content into memory in its entirety, it poses a challenge for streamed content.
+Use cases where client is intended to choose when to stop reading are particularly challenging as there is no well-defined end to the stream.
+
+###### Binary Streams
+
+The `maxLength` keyword MAY be used to set an expected upper bound on the length of a streaming payload that consists of either string data, including encoded binary data, or unencoded binary data.
+For unencoded binary, the length is the number of octets.
+For this use case, `maxLength` MAY be implemented outside of regular JSON Schema evaluation as JSON Schema does not directly apply to binary data, and an encoded binary stream may be impractical to store in memory in its entirety.
+
+###### Streaming Sequential Media Types
+
+The `itemSchema` field is provided to support streaming use cases for sequential media types, with `itemEncoding` as a corresponding encoding mechanism for streaming [positional `multipart` media types](#encoding-by-position).
+
+Unlike `schema`, which is applied to the complete content (treated as an array as described in the [sequential media types](#sequential-media-types) section), `itemSchema` MUST be applied to each item in the stream independently, which supports processing each item as it is read from the stream.
+
+Both `schema` and `itemSchema` MAY be used in the same Media Type Object.
+However, doing so is unlikely to have significant advantages over using the `items` keyword within the `schema` field.
+
+##### Special Considerations for `text/event-stream` Content
+
+For `text/event-stream`, implementations MUST work with event data after it has been parsed according to the [`text/event-stream` specification](https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream), including all guidance on ignoring certain fields (including comments) and/or values, and on combining values split across multiple lines.
+
+Field value types MUST be handled as specified by the `text/event-stream` specification (e.g. the `retry` field value is modeled as a JSON number that is expected to be of JSON Schema `type: integer`), and fields not given an explicit value type MUST be handled as strings.
+
+Some users of `text/event-stream` use a format such as JSON for field values, particularly the `data` field.
+Use JSON Schema's keywords for working with the [contents of string-encoded data](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#name-a-vocabulary-for-the-conten), particularly `contentMediaType` and `contentSchema`, to describe and validate such fields with more detail than string-related validation keywords such as `pattern` can support.
+Note that `contentSchema` is [not automatically validated by default](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#name-implementation-requirements-2) (see also the [Non-validating constraint keywords](#non-validating-constraint-keywords) section of this specification).
+
+The following Schema Object is a generic schema for the `text/event-stream` media type as documented by the HTML specification as of the time of this writing:
+
+```yaml
+type: object
+required:
+- data
+properties:
+  data:
+    type: string
+  event:
+    type: string
+  id:
+    type: string
+  retry:
+    type: integer
+    minimum: 0
+```
+
+##### Encoding Usage and Restrictions
+
+The three encoding fields define how to map each [Encoding Object](#encoding object) to a specific value in the data.
+Each field has its own set of media types with which it can be used; for all other media types all three fields SHALL be ignored.
+
+###### Encoding By Name
+
+The behavior of the `encoding` field is designed to support web forms, and is therefore only defined for media types structured as name-value pairs that allow repeat values, most notably `application/x-www-form-urlencoded` and `multipart/form-data`.
+
+To use the `encoding` field, each key under the field MUST exist in the `schema` as a property.
+Array properties MUST be handled by applying the given Encoding Object to produce one encoded value per array item, each with the same `name`, as is recommended by [[?RFC7578]] [Section 4.3](https://www.rfc-editor.org/rfc/rfc7578.html#section-4.3) for supplying multiple values per form field.
+For all other value types for both top-level non-array properties and for values, including array values, within a top-level array, the Encoding Object MUST be applied to the entire value.
+The order of these name-value pairs in the target media type is implementation-defined.
+
+For `application/x-www-form-urlencoded`, the encoding keys MUST map to parameter names, with the values produced according to the rules of the [Encoding Object](#encoding-object).
+See [Encoding the `x-www-form-urlencoded` Media Type](#encoding-the-x-www-form-urlencoded-media-type) for guidance and examples, both with and without the `encoding` field.
+
+For `multipart`, the encoding keys MUST map to the [`name` parameter](https://www.rfc-editor.org/rfc/rfc7578#section-4.2) of the `Content-Disposition: form-data` header of each part, as is defined for `multipart/form-data` in [[?RFC7578]].
+See [[?RFC7578]] [Section 5](https://www.rfc-editor.org/rfc/rfc7578.html#section-5) for guidance regarding non-ASCII part names.
+
+See [Encoding `multipart` Media Types](#encoding-multipart-media-types) for further guidance and examples, both with and without the `encoding` field.
+
+###### Encoding By Position
+
+Most `multipart` media types, including `multipart/mixed` which defines the underlying rules for parsing all `multipart` types, do not have named parts.
+Data for these media types are modeled as an array, with one item per part, in order.
+
+To use the `prefixEncoding` and/or `itemEncoding` fields, either an array `schema` or `itemSchema` MUST be present.
+These fields are analogous to the `prefixItems` and `items` JSON Schema keywords, with `prefixEncoding` (if present) providing an array of Encoding Objects that are each applied to the value at the same position in the data array, and `itemEncoding` applying its single Encoding Object to all remaining items in the array.
+
+The `itemEncoding` field can also be used with `itemSchema` to support streaming `multipart` content.
+
+###### Additional Encoding Approaches
+
+The `prefixEncoding` field can be used with any `multipart` content to require a fixed part order.
+This includes `multipart/form-data`, for which the Encoding Object's `headers` field MUST be used to provide the `Content-Disposition` and part name, as no property names exist to provide the names automatically.
+
+Prior versions of this specifications advised using the `name` [`Content-Disposition` parameter](https://www.iana.org/assignments/cont-disp/cont-disp.xhtml#cont-disp-2) of the `form-data` [`Content-Disposition` value](https://www.iana.org/assignments/cont-disp/cont-disp.xhtml#cont-disp-1) with `multipart` media types other than `multipart/form-data` in order to work around the limitations of the `encoding` field.
+Implementations MAY choose to support this workaround, but as this usage is not common, implementations of non-`form-data` `multipart` media types are unlikely to support it.
+
 ##### Media Type Examples
 
-```json
-{
-  "application/json": {
-    "schema": {
-      "$ref": "#/components/schemas/Pet"
-    },
-    "examples": {
-      "cat": {
-        "summary": "An example of a cat",
-        "value": {
-          "name": "Fluffy",
-          "petType": "Cat",
-          "color": "White",
-          "gender": "male",
-          "breed": "Persian"
-        }
-      },
-      "dog": {
-        "summary": "An example of a dog with a cat's name",
-        "value": {
-          "name": "Puma",
-          "petType": "Dog",
-          "color": "Black",
-          "gender": "Female",
-          "breed": "Mixed"
-        }
-      },
-      "frog": {
-        "$ref": "#/components/examples/frog-example"
-      }
-    }
-  }
-}
-```
+For form-related and `multipart` media type examples, see the [Encoding Object](#encoding-object).
+
+###### JSON
+
+Note that since this example is written in YAML, the Example Object `value` field can be formatted as YAML due to the trivial conversion to JSON.
+This avoids needing to embed JSON as a string.
 
 ```yaml
 application/json:
@@ -1567,6 +1380,214 @@ application/json:
         breed: Mixed
     frog:
       $ref: '#/components/examples/frog-example'
+```
+
+Alternatively, since all JSON is valid YAML, the example value can use JSON syntax within a YAML document:
+
+```yaml
+application/json:
+  schema:
+    $ref: '#/components/schemas/Pet'
+  examples:
+    cat:
+      summary: An example of a cat
+      value: {
+        "name": "Fluffy",
+        "petType": "Cat",
+        "color": "White",
+        "gender": "male",
+        "breed": "Persian"
+      }
+    dog:
+      summary: An example of a dog with a cat's name
+      value: {
+        "name": "Puma",
+        "petType": "Dog",
+        "color": "Black",
+        "gender": "Female",
+        "breed": "Mixed"
+      }
+    frog:
+      $ref: '#/components/examples/frog-example'
+```
+
+###### Sequential JSON
+
+For any [sequential media type](#sequential-media-types) where the items in the sequence are JSON values, no conversion of each value is required.
+JSON Text Sequences ([[?RFC7464]] `application/json-seq` and [[?RFC8091]] the `+json-seq` structured suffix), [JSON Lines](https://jsonlines.org/) (`application/jsonl`), and [NDJSON](https://github.com/ndjson/ndjson-spec) (`application/x-ndjson`) are all in this category.
+Note that the media types for JSON Lines and NDJSON are not registered with the IANA, but are in common use.
+
+The following example shows Media Type Objects for both streaming log entries and returning a fixed-length set in response to a query.
+This shows the relationship between `schema` and `itemSchema`, and when to use each even though the `examples` field is the same either way.
+
+```yaml
+components:
+  schemas:
+    LogEntry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: integer
+          minimum: 0
+        message:
+          type: string
+    Log:
+      type: array
+      items:
+        $ref: "#/components/schemas/LogEntry"
+      maxItems: 100
+  examples:
+    LogJSONSeq:
+      summary: Log entries in application/json-seq
+      # JSON Text Sequences require an unprintable character
+      # that cannot be escaped in a YAML string, and therefore
+      # must be placed in an external document shown below
+      externalValue: examples/log.json-seq
+    LogJSONPerLine:
+      summary: Log entries in application/jsonl or application/x-ndjson
+      description: JSONL and NDJSON are identical for this example
+      # Note that the value must be written as a string with newlines,
+      # as JSONL and NDJSON are not valid YAML
+      value: |
+        {"timestamp": "1985-04-12T23:20:50.52Z", "level": 1, "message": "Hi!"}
+        {"timestamp": "1985-04-12T23:20:51.37Z", "level": 1, "message": "Bye!"}
+  responses:
+    LogStream:
+      description: |
+        A stream of JSON-format log messages that can be read
+        for as long as the application is running, and is available
+        in any of the sequential JSON media types.
+      content:
+        application/json-seq:
+          itemSchema:
+            $ref: "#/components/schemas/LogEntry"
+          examples:
+            JSON-SEQ:
+              $ref: "#/components/examples/LogJSONSeq"
+        application/jsonl:
+          itemSchema:
+            $ref: "#/components/schemas/LogEntry"
+          examples:
+            JSONL:
+              $ref: "#/components/examples/LogJSONPerLine"
+        application/x-ndjson:
+          itemSchema:
+            $ref: "#/components/schemas/LogEntry"
+          examples:
+            NDJSON:
+              $ref: "#/components/examples/LogJSONPerLine"
+    LogExcerpt:
+      description: |
+        A response consisting of no more than 100 log records,
+        generally as a result of a query of the historical log,
+        available in any of the sequential JSON media types.
+      content:
+        application/json-seq:
+          schema:
+            $ref: "#/components/schemas/Log"
+          examples:
+            JSON-SEQ:
+              $ref: "#/components/examples/LogJSONSeq"
+        application/jsonl:
+          schema:
+            $ref: "#/components/schemas/Log"
+          examples:
+            JSONL:
+              $ref: "#/components/examples/LogJSONPerLine"
+        application/x-ndjson:
+          schema:
+            $ref: "#/components/schemas/Log"
+          examples:
+            NDJSON:
+              $ref: "#/components/examples/LogJSONPerLine"
+```
+
+Our `application/json-seq` example has to be an external document because of the use of both newlines and of the unprintable Record Separator (`0x1E`) character, which cannot be escaped in YAML block literals:
+
+```jsonseq
+0x1E{
+  "timestamp": "1985-04-12T23:20:50.52Z",
+  "level": 1,
+  "message": "Hi!"
+}
+0x1E{
+  "timestamp": "1985-04-12T23:20:51.37Z",
+  "level": 1,
+  "message": "Bye!"
+}
+```
+
+###### Server-Sent Event Streams
+
+For this example, assume that the generic event schema provided in the "Special Considerations for `text/event-stream` Content" section is available at `#/components/schemas/Event`:
+
+```yaml
+description: A request body to add a stream of typed data.
+required: true
+content:
+  text/event-stream:
+    itemSchema:
+      $ref: "#/components/schemas/Event"
+      required: [event]
+      oneOf:
+      - properties:
+          event:
+            const: addString
+      - properties:
+          event:
+            const: addInt64
+          data:
+            $comment: |
+              Since the data field is a string,
+              we need a format to signal that it
+              should be handled as a 64-bit integer.
+            format: int64
+      - properties:
+          event:
+            const: addJson
+          data:
+            $comment: |
+              These content fields indicate
+              that the string value should
+              be parsed and validated as a
+              JSON document (since JSON is not
+              a binary format, contentEncoding
+              is not needed)
+            contentMediaType: application/json
+            contentSchema:
+              type: object
+              required: [foo]
+              properties:
+                foo:
+                  type: integer
+```
+
+The following `text/event-stream` document is an example of a valid request body for the above example:
+
+```eventstream
+event: addString
+data: This data is formatted
+data: across two lines
+retry: 5
+
+event: addInt64
+data: 1234.5678
+unknownField: this is ignored
+
+: This is a comment
+event: addJSON
+data: {"foo": 42}
+```
+
+To more clearly see how this stream is handled, the following is the equivalent JSON Lines document, which shows how the numeric and JSON data are handled as strings, and how unknown fields and comments are ignored and not passed to schema validation:
+
+```jsonl
+{"event": "addString", "data": "This data is formatted\nacross two lines", "retry": 5}
+{"event": "addInt64", "data": "1234.5678"}
+{"event": "addJSON", "data": "{\"foo\": 42}"}
 ```
 
 ##### Considerations for File Uploads
@@ -1620,21 +1641,11 @@ requestBody:
 
 To upload multiple files, a `multipart` media type MUST be used as shown under [Example: Multipart Form with Multiple Files](#example-multipart-form-with-multiple-files).
 
-##### Support for x-www-form-urlencoded Request Bodies
-
-See [Encoding the `x-www-form-urlencoded` Media Type](#encoding-the-x-www-form-urlencoded-media-type) for guidance and examples, both with and without the `encoding` field.
-
-##### Special Considerations for `multipart` Content
-
-See [Encoding `multipart` Media Types](#encoding-multipart-media-types) for further guidance and examples, both with and without the `encoding` field.
-
 #### Encoding Object
 
-A single encoding definition applied to a single schema property.
-See [Appendix B](#appendix-b-data-type-conversion) for a discussion of converting values of various types to string representations.
+A single encoding definition applied to a single value, with the mapping of Encoding Objects to values determined by the [Media Type Object](@media-type-object) as described under [Encoding Usage and Restrictions](#encoding-usage-and-restrictions).
 
-Properties are correlated with `multipart` parts using the [`name` parameter](https://www.rfc-editor.org/rfc/rfc7578#section-4.2) of `Content-Disposition: form-data`, and with `application/x-www-form-urlencoded` using the query string parameter names.
-In both cases, their order is implementation-defined.
+See [Appendix B](#appendix-b-data-type-conversion) for a discussion of converting values of various types to string representations.
 
 See [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for a detailed examination of percent-encoding concerns for form media types.
 
@@ -1647,11 +1658,14 @@ These fields MAY be used either with or without the RFC6570-style serialization 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="encoding-content-type"></a>contentType | `string` | The `Content-Type` for encoding a specific property. The value is a comma-separated list, each element of which is either a specific media type (e.g. `image/png`) or a wildcard media type (e.g. `image/*`). Default value depends on the property type as shown in the table below. |
-| <a name="encoding-headers"></a>headers | Map[`string`, [Header Object](#header-object) \| [Reference Object](#reference-object)] | A map allowing additional information to be provided as headers. `Content-Type` is described separately and SHALL be ignored in this section. This field SHALL be ignored if the request body media type is not a `multipart`. |
+| <a name="encoding-headers"></a>headers | Map[`string`, [Header Object](#header-object) \| [Reference Object](#reference-object)] | A map allowing additional information to be provided as headers. `Content-Type` is described separately and SHALL be ignored in this section. This field SHALL be ignored if the media type is not a `multipart`. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
-The default values for `contentType` are as follows, where an _n/a_ in the `contentEncoding` column means that the presence or value of `contentEncoding` is irrelevant:
+The default values for `contentType` are as follows, where an _n/a_ in the `contentEncoding` column means that the presence or value of `contentEncoding` is irrelevant.
+This table is based on the value to which the Encoding Object is being applied as defined under [Encoding Usage and Restrictions](#encoding-usage-and-restrictions).
+Note that in the case of [Encoding By Name](#encoding-by-name), this value is the array item for properties of type `"array"`, and the entire value for all other types.
+Therefore the `array` row in this table applies only to array values inside of a top-level array when encoding by name.
 
 | `type` | `contentEncoding` | Default `contentType` |
 | ---- | ---- | ---- |
@@ -1660,7 +1674,7 @@ The default values for `contentType` are as follows, where an _n/a_ in the `cont
 | `string` | _absent_ | `text/plain` |
 | `number`, `integer`, or `boolean` | _n/a_ | `text/plain` |
 | `object` | _n/a_ | `application/json` |
-| `array` | _n/a_ | according to the `type` of the `items` schema |
+| `array` | _n/a_ | `application/json` |
 
 Determining how to handle a `type` value of `null` depends on how `null` values are being serialized.
 If `null` values are entirely omitted, then the `contentType` is irrelevant.
@@ -1670,9 +1684,9 @@ See [Appendix B](#appendix-b-data-type-conversion) for a discussion of data type
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="encoding-style"></a>style | `string` | Describes how a specific property value will be serialized depending on its type. See [Parameter Object](#parameter-object) for details on the [`style`](#parameter-style) field. The behavior follows the same values as `query` parameters, including default values. Note that the initial `?` used in query strings is not used in `application/x-www-form-urlencoded` message bodies, and MUST be removed (if using an RFC6570 implementation) or simply not added (if constructing the string manually). This field SHALL be ignored if the request body media type is not `application/x-www-form-urlencoded` or `multipart/form-data`. If a value is explicitly defined, then the value of [`contentType`](#encoding-content-type) (implicit or explicit) SHALL be ignored. |
-| <a name="encoding-explode"></a>explode | `boolean` | When this is true, property values of type `array` or `object` generate separate parameters for each value of the array, or key-value-pair of the map. For other types of properties this field has no effect. When [`style`](#encoding-style) is `"form"`, the default value is `true`. For all other styles, the default value is `false`. Note that despite `false` being the default for `deepObject`, the combination of `false` with `deepObject` is undefined. This field SHALL be ignored if the request body media type is not `application/x-www-form-urlencoded` or `multipart/form-data`. If a value is explicitly defined, then the value of [`contentType`](#encoding-content-type) (implicit or explicit) SHALL be ignored. |
-| <a name="encoding-allow-reserved"></a>allowReserved | `boolean` | When this is true, parameter values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). Applications are still responsible for percent-encoding reserved characters that are [not allowed in the query string](https://datatracker.ietf.org/doc/html/rfc3986#section-3.4) (`[`, `]`, `#`), or have a special meaning in `application/x-www-form-urlencoded` (`-`, `&`, `+`); see Appendices [C](#appendix-c-using-rfc6570-based-serialization) and [E](#appendix-e-percent-encoding-and-form-media-types) for details. The default value is `false`. This field SHALL be ignored if the request body media type is not `application/x-www-form-urlencoded` or `multipart/form-data`. If a value is explicitly defined, then the value of [`contentType`](#encoding-content-type) (implicit or explicit) SHALL be ignored. |
+| <a name="encoding-style"></a>style | `string` | Describes how a specific property value will be serialized depending on its type. See [Parameter Object](#parameter-object) for details on the [`style`](#parameter-style) field. The behavior follows the same values as `query` parameters, including default values. Note that the initial `?` used in query strings is not used in `application/x-www-form-urlencoded` message bodies, and MUST be removed (if using an RFC6570 implementation) or simply not added (if constructing the string manually). This field SHALL be ignored if the media type is not `application/x-www-form-urlencoded` or `multipart/form-data`. If a value is explicitly defined, then the value of [`contentType`](#encoding-content-type) (implicit or explicit) SHALL be ignored. |
+| <a name="encoding-explode"></a>explode | `boolean` | When this is true, property values of type `array` or `object` generate separate parameters for each value of the array, or key-value-pair of the map. For other types of properties this field has no effect. When [`style`](#encoding-style) is `"form"`, the default value is `true`. For all other styles, the default value is `false`. Note that despite `false` being the default for `deepObject`, the combination of `false` with `deepObject` is undefined. This field SHALL be ignored if the media type is not `application/x-www-form-urlencoded` or `multipart/form-data`. If a value is explicitly defined, then the value of [`contentType`](#encoding-content-type) (implicit or explicit) SHALL be ignored. |
+| <a name="encoding-allow-reserved"></a>allowReserved | `boolean` | When this is true, parameter values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). Applications are still responsible for percent-encoding reserved characters that are not allowed in the target media type; see Appendices [C](#appendix-c-using-rfc6570-based-serialization) and [E](#appendix-e-percent-encoding-and-form-media-types) for details. The default value is `false`. This field SHALL be ignored if the media type is not `application/x-www-form-urlencoded` or `multipart/form-data`. If a value is explicitly defined, then the value of [`contentType`](#encoding-content-type) (implicit or explicit) SHALL be ignored. |
 
 See also [Appendix C: Using RFC6570 Implementations](#appendix-c-using-rfc6570-based-serialization) for additional guidance, including on difficulties caused by the interaction between RFC6570's percent-encoding rules and the `multipart/form-data` media type.
 
@@ -1681,8 +1695,8 @@ The absence of all three of those fields is the equivalent of using `content`, b
 
 ##### Encoding the `x-www-form-urlencoded` Media Type
 
-To submit content using form url encoding via [RFC1866](https://tools.ietf.org/html/rfc1866), use the `application/x-www-form-urlencoded` media type in the [Media Type Object](#media-type-object) under the [Request Body Object](#request-body-object).
-This configuration means that the request body MUST be encoded per [RFC1866](https://tools.ietf.org/html/rfc1866) when passed to the server, after any complex objects have been serialized to a string representation.
+To work with content using form url encoding via [RFC1866](https://tools.ietf.org/html/rfc1866), use the `application/x-www-form-urlencoded` media type in the [Media Type Object](#media-type-object).
+This configuration means that the content MUST be encoded per [RFC1866](https://tools.ietf.org/html/rfc1866) when passed to the server, after any complex objects have been serialized to a string representation.
 
 See [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for a detailed examination of percent-encoding concerns for form media types.
 
@@ -1736,7 +1750,7 @@ id=%22f81d4fae-7dec-11d0-a765-00a0c91e6bf6%22
 
 Note that `application/x-www-form-urlencoded` is a text format, which requires base64-encoding any binary data:
 
-```YAML
+```yaml
 requestBody:
   content:
     application/x-www-form-urlencoded:
@@ -1746,8 +1760,9 @@ requestBody:
           name:
             type: string
           icon:
-            # The default with "contentEncoding" is application/octet-stream,
-            # so we need to set image media type(s) in the Encoding Object.
+            # The default content type with "contentEncoding" present
+            # is application/octet-stream, so we need to set the correct
+            # image media type(s) in the Encoding Object.
             type: string
             contentEncoding: base64url
   encoding:
@@ -1768,20 +1783,13 @@ However, this is not guaranteed, so it may be more interoperable to keep the pad
 
 ##### Encoding `multipart` Media Types
 
-It is common to use `multipart/form-data` as a `Content-Type` when transferring forms as request bodies. In contrast to OpenAPI 2.0, a `schema` is REQUIRED to define the input parameters to the operation when using `multipart` content. This supports complex structures as well as supporting mechanisms for multiple file uploads.
-
-The `form-data` disposition and its `name` parameter are mandatory for `multipart/form-data` ([RFC7578](https://www.rfc-editor.org/rfc/rfc7578.html#section-4.2)).
-Array properties are handled by applying the same `name` to multiple parts, as is recommended by [RFC7578](https://www.rfc-editor.org/rfc/rfc7578.html#section-4.3) for supplying multiple values per form field.
-See [RFC7578](https://www.rfc-editor.org/rfc/rfc7578.html#section-5) for guidance regarding non-ASCII part names.
-
-Various other `multipart` types, most notable `multipart/mixed` ([RFC2046](https://www.rfc-editor.org/rfc/rfc2046.html#section-5.1.3)) neither require nor forbid specific `Content-Disposition` values, which means care must be taken to ensure that any values used are supported by all relevant software.
-It is not currently possible to correlate schema properties with unnamed, ordered parts in media types such as `multipart/mixed`, but implementations MAY choose to support such types when `Content-Disposition: form-data` is used with a `name` parameter.
+See [Encoding Usage and Restrictions](#encoding-usage-and-restrictions) for guidance on correlating schema properties with parts.
 
 Note that there are significant restrictions on what headers can be used with `multipart` media types in general ([RFC2046](https://www.rfc-editor.org/rfc/rfc2046.html#section-5.1)) and `multi-part/form-data` in particular ([RFC7578](https://www.rfc-editor.org/rfc/rfc7578.html#section-4.8)).
 
 Note also that `Content-Transfer-Encoding` is deprecated for `multipart/form-data` ([RFC7578](https://www.rfc-editor.org/rfc/rfc7578.html#section-4.7)) where binary data is supported, as it is in HTTP.
 
-+Using `contentEncoding` for a multipart field is equivalent to specifying an [Encoding Object](#encoding-object) with a `headers` field containing `Content-Transfer-Encoding` with a schema that requires the value used in `contentEncoding`.
+Using `contentEncoding` for a multipart field is equivalent to specifying an [Encoding Object](#encoding-object) with a `headers` field containing `Content-Transfer-Encoding` with a schema that requires the value used in `contentEncoding`.
 +If `contentEncoding` is used for a multipart field that has an Encoding Object with a `headers` field containing `Content-Transfer-Encoding` with a schema that disallows the value from `contentEncoding`, the result is undefined for serialization and parsing.
 
 Note that as stated in [Working with Binary Data](#working-with-binary-data), if the Encoding Object's `contentType`, whether set explicitly or implicitly through its default value rules, disagrees with the `contentMediaType` in a Schema Object, the `contentMediaType` SHALL be ignored.
@@ -1800,17 +1808,22 @@ requestBody:
       schema:
         type: object
         properties:
+          # default content type for a string without `contentEncoding`
+          # is `text/plain`
           id:
-            # default for primitives without a special format is text/plain
             type: string
             format: uuid
-          profileImage:
-            # default for string with binary format is `application/octet-stream`
-            type: string
-            format: binary
+
+          # default content type for a schema without `type`
+          # is `application/octet-stream`
+          profileImage: {}
+
+          # for arrays, the `encoding` field applies the Encoding Object
+          # to each item individually and determines the default content type
+          # based on the type in the `items` subschema, which in this example
+          # is an object, so the default content type for each item is
+          # `application/json`
           addresses:
-            # default for arrays is based on the type in the `items`
-            # subschema, which is an object, so `application/json`
             type: array
             items:
               $ref: '#/components/schemas/Address'
@@ -1828,31 +1841,27 @@ requestBody:
       schema:
         type: object
         properties:
+          # No Encoding Object, so use default `text/plain`
           id:
-            # default is `text/plain`
             type: string
             format: uuid
+
+          # Encoding Object overrides the default `application/json` content type
+          # for each item in the array with `application/xml; charset=utf-8`
           addresses:
-            # default based on the `items` subschema would be
-            # `application/json`, but we want these address objects
-            # serialized as `application/xml` instead
             description: addresses in XML format
             type: array
             items:
               $ref: '#/components/schemas/Address'
-          profileImage:
-            # default is application/octet-stream, but we can declare
-            # a more specific image type or types
-            type: string
-            format: binary
+
+          # Encoding Object accepts only PNG or JPEG, and also describes
+          # a custom header for just this part in the multipart format
+          profileImage: {}
+
       encoding:
         addresses:
-          # require XML Content-Type in utf-8 encoding
-          # This is applied to each address part corresponding
-          # to each address in he array
           contentType: application/xml; charset=utf-8
         profileImage:
-          # only accept png or jpeg
           contentType: image/png, image/jpeg
           headers:
             X-Rate-Limit-Limit:
@@ -1878,6 +1887,97 @@ requestBody:
 ```
 
 As seen in the [Encoding Object's `contentType` field documentation](#encoding-content-type), the empty schema for `items` indicates a media type of `application/octet-stream`.
+
+###### Example: Ordered, Unnamed Multipart
+
+A `multipart/mixed` payload consisting of a JSON metadata document followed by an image which the metadata describes:
+
+```yaml
+multipart/mixed:
+  schema:
+    prefixItems:
+    - # default content type for objects
+      # is `application/json`type: object
+      properties:
+        author:
+          type: string
+        created:
+          type: string
+          format: datetime
+        copyright:
+          type: string
+        license:
+          type: string
+    - # default content type for a schema without `type`
+      # is `application/octet-stream`, which we need
+      # to override.
+      {}
+  prefixEncoding:
+  - # Encoding Object defaults are correct for JSON
+    {}
+  - contentType: image/*
+```
+
+###### Example: Ordered Multipart With Required Header
+
+As described in [[?RFC2557]], a set of HTML pages can be sent in a `multipart/related` payload, preserving links among themselves by defining a `Content-Location` header for each page.
+
+See [Appendix D](appendix-d-serializing-headers-and-cookies) for an explanation of why `content: {text/plain: {...}}` is used to describe the header value.
+
+```yaml
+multipart/related:
+  schema:
+    items:
+      type: string
+  itemEncoding:
+    contentType: text/html
+    headers:
+      Content-Location:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              format: uri
+```
+
+While the above example could have used `itemSchema` instead, if the payload is expected to be processed all at once, using `schema` ensures that tools will wait until the complete response is available before processing.
+
+###### Example: Streaming Multipart
+
+This example assumes a device that takes large sets of pictures and streams them to the caller.
+Unlike the previous example, we use `itemSchema` here because the expectation is that each image is processed as it arrives (or in small batches), since we know that buffering the entire stream will take too much memory.
+
+```yaml
+multipart/mixed:
+  itemSchema:
+    $comment: A single data image from the device
+  itemEncoding:
+    contentType: image/jpg
+```
+
+###### Example: Streaming Byte Ranges
+
+For `multipart/byteranges` [[RFC9110]] [Section 14.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-14.6), a `Content-Range` header is required:
+
+See [Appendix D](appendix-d-serializing-headers-and-cookies) for an explanation of why `content: {text/plain: {...}}` is used to describe the header value.
+
+```yaml
+multipart/byteranges:
+  itemSchema:
+    $comment: A single range of bytes from a video
+  itemEncoding:
+    contentType: video/mp4
+    headers:
+      Content-Range:
+        required: true
+        content:
+          text/plain:
+            schema:
+              # A suitable "pattern" constraint for this
+              # header is left as an exercise for the reader
+              type: string
+```
 
 #### Responses Object
 
@@ -1912,31 +2012,6 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 A 200 response for a successful operation and a default response for others (implying an error):
 
-```json
-{
-  "200": {
-    "description": "a pet to be returned",
-    "content": {
-      "application/json": {
-        "schema": {
-          "$ref": "#/components/schemas/Pet"
-        }
-      }
-    }
-  },
-  "default": {
-    "description": "Unexpected error",
-    "content": {
-      "application/json": {
-        "schema": {
-          "$ref": "#/components/schemas/ErrorModel"
-        }
-      }
-    }
-  }
-}
-```
-
 ```yaml
 '200':
   description: a pet to be returned
@@ -1961,9 +2036,10 @@ Describes a single response from an API operation, including design-time, static
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="response-description"></a>description | `string` | **REQUIRED**. A description of the response. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
-| <a name="response-headers"></a>headers | Map[`string`, [Header Object](#header-object) \| [Reference Object](#reference-object)] | Maps a header name to its definition. [RFC7230](https://tools.ietf.org/html/rfc7230#section-3.2) states header names are case insensitive. If a response header is defined with the name `"Content-Type"`, it SHALL be ignored. |
-| <a name="response-content"></a>content | Map[`string`, [Media Type Object](#media-type-object)] | A map containing descriptions of potential response payloads. The key is a media type or [media type range](https://tools.ietf.org/html/rfc7231#appendix-D) and the value describes it. For responses that match multiple keys, only the most specific key is applicable. e.g. `"text/plain"` overrides `"text/*"` |
+| <a name="response-summary"></a>summary | `string` | A short summary of the meaning of the response. |
+| <a name="response-description"></a>description | `string` | A description of the response. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="response-headers"></a>headers | Map[`string`, [Header Object](#header-object) \| [Reference Object](#reference-object)] | Maps a header name to its definition. [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.1) states header names are case insensitive. If a response header is defined with the name `"Content-Type"`, it SHALL be ignored. |
+| <a name="response-content"></a>content | Map[`string`, [Media Type Object](#media-type-object)] | A map containing descriptions of potential response payloads. The key is a media type or [media type range](https://www.rfc-editor.org/rfc/rfc9110.html#appendix-A) and the value describes it. For responses that match multiple keys, only the most specific key is applicable. e.g. `"text/plain"` overrides `"text/*"` |
 | <a name="response-links"></a>links | Map[`string`, [Link Object](#link-object) \| [Reference Object](#reference-object)] | A map of operations links that can be followed from the response. The key of the map is a short name for the link, following the naming constraints of the names for [Component Objects](#components-object). |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
@@ -1971,22 +2047,6 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 ##### Response Object Examples
 
 Response of an array of a complex type:
-
-```json
-{
-  "description": "A complex object array response",
-  "content": {
-    "application/json": {
-      "schema": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/VeryComplexType"
-        }
-      }
-    }
-  }
-}
-```
 
 ```yaml
 description: A complex object array response
@@ -2000,19 +2060,6 @@ content:
 
 Response with a string type:
 
-```json
-{
-  "description": "A simple string response",
-  "content": {
-    "text/plain": {
-      "schema": {
-        "type": "string"
-      }
-    }
-  }
-}
-```
-
 ```yaml
 description: A simple string response
 content:
@@ -2022,40 +2069,6 @@ content:
 ```
 
 Plain text response with headers:
-
-```json
-{
-  "description": "A simple string response",
-  "content": {
-    "text/plain": {
-      "schema": {
-        "type": "string"
-      },
-      "example": "whoa!"
-    }
-  },
-  "headers": {
-    "X-Rate-Limit-Limit": {
-      "description": "The number of allowed requests in the current period",
-      "schema": {
-        "type": "integer"
-      }
-    },
-    "X-Rate-Limit-Remaining": {
-      "description": "The number of remaining requests in the current period",
-      "schema": {
-        "type": "integer"
-      }
-    },
-    "X-Rate-Limit-Reset": {
-      "description": "The number of seconds left in the current period",
-      "schema": {
-        "type": "integer"
-      }
-    }
-  }
-}
-```
 
 ```yaml
 description: A simple string response
@@ -2080,12 +2093,6 @@ headers:
 ```
 
 Response with no return value:
-
-```json
-{
-  "description": "object created"
-}
-```
 
 ```yaml
 description: object created
@@ -2211,19 +2218,19 @@ Tooling implementations MAY choose to validate compatibility automatically, and 
 
 ##### Working with Examples
 
-Example Objects can be used in both [Parameter Objects](#parameter-object) and [Media Type Objects](#media-type-object).
-In both Objects, this is done through the `examples` (plural) field.
-However, there are several other ways to provide examples: The `example` (singular) field that is mutually exclusive with `examples` in both Objects, and two keywords (the deprecated singular `example` and the current plural `examples`, which takes an array of examples) in the [Schema Object](#schema-object) that appears in the `schema` field of both Objects.
+Example Objects can be used in [Parameter Objects](#parameter-object), [Header Objects](#header-object), and [Media Type Objects](#media-type-object).
+In all three Objects, this is done through the `examples` (plural) field.
+However, there are several other ways to provide examples: The `example` (singular) field that is mutually exclusive with `examples` in all three Objects, and two keywords (the deprecated singular `example` and the current plural `examples`, which takes an array of examples) in the [Schema Object](#schema-object) that appears in the `schema` field of all three Objects.
 Each of these fields has slightly different considerations.
 
 The Schema Object's fields are used to show example values without regard to how they might be formatted as parameters or within media type representations.
 The `examples` array is part of JSON Schema and is the preferred way to include examples in the Schema Object, while `example` is retained purely for compatibility with older versions of the OpenAPI Specification.
 
-The mutually exclusive fields in the Parameter or Media Type Objects are used to show example values which SHOULD both match the schema and be formatted as they would appear as a serialized parameter or within a media type representation.
-The exact serialization and encoding is determined by various fields in the Parameter Object, or in the Media Type Object's [Encoding Object](#encoding-object).
+The mutually exclusive fields in the Parameter, Header, or Media Type Objects are used to show example values which SHOULD both match the schema and be formatted as they would appear as a serialized parameter, serialized header, or within a media type representation.
+The exact serialization and encoding is determined by various fields in the Parameter Object, Header Object, or in the Media Type Object's [Encoding Object](#encoding-object).
 Because examples using these fields represent the final serialized form of the data, they SHALL _override_ any `example` in the corresponding Schema Object.
 
-The singular `example` field in the Parameter or Media Type Object is concise and convenient for simple examples, but does not offer any other advantages over using Example Objects under `examples`.
+The singular `example` field in the Parameter, Header, or Media Type Object is concise and convenient for simple examples, but does not offer any other advantages over using Example Objects under `examples`.
 
 Some examples cannot be represented directly in JSON or YAML.
 For all three ways of providing examples, these can be shown as string values with any escaping necessary to make the string valid in the JSON or YAML format of documents that comprise the OpenAPI Description.
@@ -2293,20 +2300,6 @@ Two different uses of JSON strings:
 
 First, a request or response body that is just a JSON string (not an object containing a string):
 
-```json
-"application/json": {
-  "schema": {
-    "type": "string"
-  },
-  "examples": {
-    "jsonBody": {
-      "description": "A body of just the JSON string \"json\"",
-      "value": "json"
-    }
-  }
-}
-```
-
 ```yaml
 application/json:
   schema:
@@ -2320,30 +2313,6 @@ application/json:
 In the above example, we can just show the JSON string (or any JSON value) as-is, rather than stuffing a serialized JSON value into a JSON string, which would have looked like `"\"json\""`.
 
 In contrast, a JSON string encoded inside of a URL-style form body:
-
-```json
-"application/x-www-form-urlencoded": {
-  "schema": {
-    "type": "object",
-    "properties": {
-      "jsonValue": {
-        "type": "string"
-      }
-    }
-  },
-  "encoding": {
-    "jsonValue": {
-      "contentType": "application/json"
-    }
-  },
-  "examples": {
-    "jsonFormValue": {
-      "description": "The JSON string \"json\" as a form value",
-      "value": "jsonValue=%22json%22"
-    }
-  }
-}
-```
 
 ```yaml
 application/x-www-form-urlencoded:
@@ -2380,13 +2349,14 @@ For computing links and providing instructions to execute them, a [runtime expre
 | <a name="link-operation-id"></a>operationId | `string` | The name of an _existing_, resolvable OAS operation, as defined with a unique `operationId`. This field is mutually exclusive of the `operationRef` field. |
 | <a name="link-parameters"></a>parameters | Map[`string`, Any \| [{expression}](#runtime-expressions)] | A map representing parameters to pass to an operation as specified with `operationId` or identified via `operationRef`. The key is the parameter name to be used (optionally qualified with the parameter location, e.g. `path.id` for an `id` parameter in the path), whereas the value can be a constant or an expression to be evaluated and passed to the linked operation. |
 | <a name="link-request-body"></a>requestBody | Any \| [{expression}](#runtime-expressions) | A literal value or [{expression}](#runtime-expressions) to use as a request body when calling the target operation. |
+| <a name="link-summary"></a>summary | `string` | A short summary of the purpose of the link. |
 | <a name="link-description"></a>description | `string` | A description of the link. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="link-server"></a>server | [Server Object](#server-object) | A server object to be used by the target operation. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
 A linked operation MUST be identified using either an `operationRef` or `operationId`.
-The identified or reference operation MUST be unique, and in the case of an `operationId`, it MUST be resolved within the scope of the OpenAPI Description (OAD).
+The identified or referenced operation MUST be unique, and in the case of an `operationId`, it MUST be resolved within the scope of the OpenAPI Description (OAD).
 Because of the potential for name clashes, the `operationRef` syntax is preferred for multi-document OADs.
 However, because use of an operation depends on its URL path template in the [Paths Object](#paths-object), operations from any [Path Item Object](#path-item-object) that is referenced multiple times within the OAD cannot be resolved unambiguously.
 In such ambiguous cases, the resulting behavior is implementation-defined and MAY result in an error.
@@ -2509,13 +2479,13 @@ The runtime expression is defined by the following [ABNF](https://tools.ietf.org
                     ; %x2F ('/') and %x7E ('~') are excluded from 'unescaped'
     escaped         = "~" ( "0" / "1" )
                     ; representing '~' and '/', respectively
-    name = *( CHAR )
+    name = *char
     token = 1*tchar
     tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "."
           / "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
 ```
 
-Here, `json-pointer` is taken from [RFC6901](https://tools.ietf.org/html/rfc6901), `char` from [RFC7159](https://tools.ietf.org/html/rfc7159#section-7) and `token` from [RFC7230](https://tools.ietf.org/html/rfc7230#section-3.2.6).
+Here, `json-pointer` is taken from [RFC6901](https://tools.ietf.org/html/rfc6901), `char` from [RFC8259](https://tools.ietf.org/html/rfc8259#section-7) and `token` from [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.2).
 
 The `name` identifier is case-sensitive, whereas `token` is not.
 
@@ -2544,7 +2514,7 @@ The Header Object follows the structure of the [Parameter Object](#parameter-obj
 
 1. `name` MUST NOT be specified, it is given in the corresponding `headers` map.
 1. `in` MUST NOT be specified, it is implicitly in `header`.
-1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, [`style`](#parameter-style)). This means that `allowEmptyValue` and `allowReserved` MUST NOT be used, and `style`, if used, MUST be limited to `"simple"`.
+1. All traits that are affected by the location MUST be applicable to a location of `header` (for example, [`style`](#parameter-style)). This means that `allowEmptyValue` MUST NOT be used, and `style`, if used, MUST be limited to `"simple"`.
 
 ##### Fixed Fields
 
@@ -2554,6 +2524,7 @@ These fields MAY be used with either `content` or `schema`.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
+| <a name="header-summary"></a>summary | `string` | A short summary of the header. |
 | <a name="header-description"></a>description | `string` | A brief description of the header. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="header-required"></a>required | `boolean` | Determines whether this header is mandatory. The default value is `false`. |
 | <a name="header-deprecated"></a> deprecated | `boolean` | Specifies that the header is deprecated and SHOULD be transitioned out of usage. Default value is `false`. |
@@ -2593,15 +2564,6 @@ Using `content` with a `text/plain` media type is RECOMMENDED for headers where 
 
 A simple header of type `integer`:
 
-```json
-"X-Rate-Limit-Limit": {
-  "description": "The number of allowed requests in the current period",
-  "schema": {
-    "type": "integer"
-  }
-}
-```
-
 ```yaml
 X-Rate-Limit-Limit:
   description: The number of allowed requests in the current period
@@ -2610,20 +2572,6 @@ X-Rate-Limit-Limit:
 ```
 
 Requiring that a strong `ETag` header (with a value starting with `"` rather than `W/`) is present. Note the use of `content`, because using `schema` and `style` would require the `"` to be percent-encoded as `%22`:
-
-```json
-"ETag": {
-  "required": true,
-  "content": {
-    "text/plain": {
-      "schema": {
-        "type": "string",
-        "pattern": "^\""
-      }
-    }
-  }
-}
-```
 
 ```yaml
 ETag:
@@ -2644,24 +2592,34 @@ It is not mandatory to have a Tag Object per tag defined in the Operation Object
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="tag-name"></a>name | `string` | **REQUIRED**. The name of the tag. |
+| <a name="tag-name"></a>name | `string` | **REQUIRED**. The name of the tag. Use this value in the `tags` array of an Operation. |
+| <a name="tag-summary"></a>summary | `string` | A short summary of the tag, used for display purposes. |
 | <a name="tag-description"></a>description | `string` | A description for the tag. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="tag-external-docs"></a>externalDocs | [External Documentation Object](#external-documentation-object) | Additional external documentation for this tag. |
+| <a name="tag-parent"></a>parent | `string` | The `name` of a tag that this tag is nested under. The named tag MUST exist in the API description, and circular references between parent and child tags MUST NOT be used. |
+| <a name="tag-kind"></a>kind | `string` | A machine-readable string to categorize what sort of tag it is. Any string value can be used; common uses are `nav` for Navigation, `badge` for visible badges, `audience` for APIs used by different groups. A [registry of the most commonly used values](https://spec.openapis.org/registry/tag-kind/) is available. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
 ##### Tag Object Example
 
-```json
-{
-  "name": "pet",
-  "description": "Pets operations"
-}
-```
-
 ```yaml
-name: pet
-description: Pets operations
+tags:
+  - name: account-updates
+    summary: Account Updates
+    description: Account update operations
+    kind: nav
+
+  - name: partner
+    summary: Partner
+    description: Operations available to the partners network
+    parent: external
+    kind: audience
+
+  - name: external
+    summary: External
+    description: Operations available to external consumers
+    kind: audience
 ```
 
 #### Reference Object
@@ -2686,35 +2644,17 @@ Note that this restriction on additional properties is a difference between Refe
 
 ##### Reference Object Example
 
-```json
-{
-  "$ref": "#/components/schemas/Pet"
-}
-```
-
 ```yaml
 $ref: '#/components/schemas/Pet'
 ```
 
 ##### Relative Schema Document Example
 
-```json
-{
-  "$ref": "Pet.json"
-}
-```
-
 ```yaml
 $ref: Pet.yaml
 ```
 
 ##### Relative Documents with Embedded Schema Example
-
-```json
-{
-  "$ref": "definitions.json#/Pet"
-}
-```
 
 ```yaml
 $ref: definitions.yaml#/Pet
@@ -2723,16 +2663,16 @@ $ref: definitions.yaml#/Pet
 #### Schema Object
 
 The Schema Object allows the definition of input and output data types.
-These types can be objects, but also primitives and arrays. This object is a superset of the [JSON Schema Specification Draft 2020-12](https://tools.ietf.org/html/draft-bhutton-json-schema-00). The empty schema (which allows any instance to validate) MAY be represented by the boolean value `true` and a schema which allows no instance to validate MAY be represented by the boolean value `false`.
+These types can be objects, but also primitives and arrays. This object is a superset of the [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html). The empty schema (which allows any instance to validate) MAY be represented by the boolean value `true` and a schema which allows no instance to validate MAY be represented by the boolean value `false`.
 
-For more information about the keywords, see [JSON Schema Core](https://tools.ietf.org/html/draft-bhutton-json-schema-00) and [JSON Schema Validation](https://tools.ietf.org/html/draft-bhutton-json-schema-validation-00).
+For more information about the keywords, see [JSON Schema Core](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html) and [JSON Schema Validation](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html).
 
 Unless stated otherwise, the keyword definitions follow those of JSON Schema and do not add any additional semantics; this includes keywords such as `$schema`, `$id`, `$ref`, and `$dynamicRef` being URIs rather than URLs.
 Where JSON Schema indicates that behavior is defined by the application (e.g. for annotations), OAS also defers the definition of semantics to the application consuming the OpenAPI document.
 
 ##### JSON Schema Keywords
 
-The OpenAPI Schema Object [dialect](https://tools.ietf.org/html/draft-bhutton-json-schema-00#section-4.3.3) is defined as requiring the [OAS base vocabulary](#base-vocabulary), in addition to the vocabularies as specified in the JSON Schema Specification Draft 2020-12 [general purpose meta-schema](https://tools.ietf.org/html/draft-bhutton-json-schema-00#section-8).
+The OpenAPI Schema Object [dialect](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.3.3) is defined as requiring the [OAS base vocabulary](#base-vocabulary), in addition to the vocabularies as specified in the JSON Schema Specification Draft 2020-12 [general purpose meta-schema](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8).
 
 The OpenAPI Schema Object dialect for this version of the specification is identified by the URI `https://spec.openapis.org/oas/3.1/dialect/base` (the <a name="dialect-schema-id"></a>"OAS dialect schema id").
 
@@ -2743,15 +2683,15 @@ The following keywords are taken from the JSON Schema specification but their de
 
 In addition to the JSON Schema keywords comprising the OAS dialect, the Schema Object supports keywords from any other vocabularies, or entirely arbitrary properties.
 
-JSON Schema implementations MAY choose to treat keywords defined by the OpenAPI Specification's base vocabulary as [unknown keywords](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-4.3.1), due to its inclusion in the OAS dialect with a [`$vocabulary`](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-8.1.2) value of `false`.
+JSON Schema implementations MAY choose to treat keywords defined by the OpenAPI Specification's base vocabulary as [unknown keywords](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.3.1), due to its inclusion in the OAS dialect with a [`$vocabulary`](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8.1.2) value of `false`.
 <a name="base-vocabulary"></a>The OAS base vocabulary is comprised of the following keywords:
 
 ##### Fixed Fields
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="schema-discriminator"></a>discriminator | [Discriminator Object](#discriminator-object) | Adds support for polymorphism. The discriminator is used to determine which of a set of schemas a payload is expected to satisfy. See [Composition and Inheritance](#composition-and-inheritance-polymorphism) for more details. |
-| <a name="schema-xml"></a>xml | [XML Object](#xml-object) | This MAY be used only on property schemas. It has no effect on root schemas. Adds additional metadata to describe the XML representation of this property. |
+| <a name="schema-discriminator"></a>discriminator | [Discriminator Object](#discriminator-object) | The discriminator provides a "hint" for which of a set of schemas a payload is expected to satisfy. See [Composition and Inheritance](#composition-and-inheritance-polymorphism) for more details. |
+| <a name="schema-xml"></a>xml | [XML Object](#xml-object) | Adds additional metadata to describe the XML representation of this schema. |
 | <a name="schema-external-docs"></a>externalDocs | [External Documentation Object](#external-documentation-object) | Additional external documentation for this schema. |
 | <a name="schema-example"></a>example | Any | A free-form field to include an example of an instance for this schema. To represent examples that cannot be naturally represented in JSON or YAML, a string value can be used to contain the example with escaping where necessary.<br><br>**Deprecated:** The `example` field has been deprecated in favor of the JSON Schema `examples` keyword. Use of `example` is discouraged, and later versions of this specification may remove it. |
 
@@ -2759,20 +2699,20 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 ##### Extended Validation with Annotations
 
-JSON Schema Draft 2020-12 supports [collecting annotations](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-7.7.1), including [treating unrecognized keywords as annotations](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-6.5).
+JSON Schema Draft 2020-12 supports [collecting annotations](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-7.7.1), including [treating unrecognized keywords as annotations](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-6.5).
 OAS implementations MAY use such annotations, including [extensions](https://spec.openapis.org/registry/extension/) not recognized as part of a declared JSON Schema vocabulary, as the basis for further validation.
 Note that JSON Schema Draft 2020-12 does not require an `x-` prefix for extensions.
 
 ###### Non-validating constraint keywords
 
-The [`format` keyword (when using default format-annotation vocabulary)](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-validation-00#section-7.2.1) and the [`contentMediaType`, `contentEncoding`, and `contentSchema` keywords](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-validation-00#section-8.2) define constraints on the data, but are treated as annotations instead of being validated directly.
+The [`format` keyword (when using default format-annotation vocabulary)](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-7.2.1) and the [`contentMediaType`, `contentEncoding`, and `contentSchema` keywords](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-8.2) define constraints on the data, but are treated as annotations instead of being validated directly.
 Extended validation is one way that these constraints MAY be enforced.
 
 ###### Validating `readOnly` and `writeOnly`
 
 The `readOnly` and `writeOnly` keywords are annotations, as JSON Schema is not aware of how the data it is validating is being used.
 Validation of these keywords MAY be done by checking the annotation, the read or write direction, and (if relevant) the current value of the field.
-[JSON Schema Validation Draft 2020-12 §9.4](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-validation-00#section-9.4) defines the expectations of these keywords, including that a resource (described as the "owning authority") MAY either ignore a `readOnly` field or treat it as an error.
+[JSON Schema Validation Draft 2020-12 Section 9.4](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-9.4) defines the expectations of these keywords, including that a resource (described as the "owning authority") MAY either ignore a `readOnly` field or treat it as an error.
 
 Fields that are both required and read-only are an example of when it is beneficial to ignore a `readOnly: true` constraint in a PUT, particularly if the value has not been changed.
 This allows correctly requiring the field on a GET and still using the same representation and schema with PUT.
@@ -2788,10 +2728,16 @@ The OpenAPI Specification allows combining and extending model definitions using
 `allOf` takes an array of object definitions that are validated _independently_ but together compose a single object.
 
 While composition offers model extensibility, it does not imply a hierarchy between the models.
-To support polymorphism, the OpenAPI Specification adds the [`discriminator`](#schema-discriminator) field.
-When used, the `discriminator` indicates the name of the property that hints which schema definition is expected to validate the structure of the model.
-As such, the `discriminator` field MUST be a required field.
-There are two ways to define the value of a discriminator for an inheriting instance.
+
+JSON Schema also provides the `anyOf` and `oneOf` keywords, which allow defining multiple schemas where at least one or exactly one of them must be valid, respectively.
+As is the case with `allOf`, the schemas are validated _independently_.
+These keywords can be used to describe polymorphism, where a single field can accept multiple types of values.
+
+The OpenAPI specification extends the JSON Schema support for polymorphism by adding the [`discriminator`](#schema-discriminator) field whose value is a [Discriminator Object](#discriminator-object).
+When used, the Discriminator Object indicates the name of the property that hints which schema of an `anyOf` or `oneOf` is expected to validate the structure of the model.
+The discriminating property MAY be defined as required or optional, but when defined as an optional property the Discriminator Object MUST include a `defaultMapping` field that specifies which schema of the `anyOf` or `oneOf`, or which schema that references the current schema in an `allOf`, is expected to validate the structure of the model when the discriminating property is not present.
+
+There are two ways to define the value of a discriminating property for an inheriting instance.
 
 * Use the schema name.
 * [Override the schema name](#discriminator-mapping) by overriding the property with a new value. If a new value exists, this takes precedence over the schema name.
@@ -2820,7 +2766,7 @@ The [XML Object](#xml-object) contains additional information about the availabl
 
 It is important for tooling to be able to determine which dialect or meta-schema any given resource wishes to be processed with: JSON Schema Core, JSON Schema Validation, OpenAPI Schema dialect, or some custom meta-schema.
 
-The `$schema` keyword MAY be present in any Schema Object that is a [schema resource root](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-4.3.5), and if present MUST be used to determine which dialect should be used when processing the schema. This allows use of Schema Objects which comply with other drafts of JSON Schema than the default Draft 2020-12 support. Tooling MUST support the <a href="#dialect-schema-id">OAS dialect schema id</a>, and MAY support additional values of `$schema`.
+The `$schema` keyword MAY be present in any Schema Object that is a [schema resource root](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.3.5), and if present MUST be used to determine which dialect should be used when processing the schema. This allows use of Schema Objects which comply with other drafts of JSON Schema than the default Draft 2020-12 support. Tooling MUST support the <a href="#dialect-schema-id">OAS dialect schema id</a>, and MAY support additional values of `$schema`.
 
 To allow use of a different default `$schema` value for all Schema Objects contained within an OAS document, a `jsonSchemaDialect` value may be set within the <a href="#openapi-object">OpenAPI Object</a>. If this default is not set, then the OAS dialect schema id MUST be used for these Schema Objects. The value of `$schema` within a resource root Schema Object always overrides any default.
 
@@ -2831,39 +2777,12 @@ However, for maximum interoperability, it is RECOMMENDED that OpenAPI descriptio
 
 ###### Primitive Example
 
-```json
-{
-  "type": "string",
-  "format": "email"
-}
-```
-
 ```yaml
 type: string
 format: email
 ```
 
 ###### Simple Model
-
-```json
-{
-  "type": "object",
-  "required": ["name"],
-  "properties": {
-    "name": {
-      "type": "string"
-    },
-    "address": {
-      "$ref": "#/components/schemas/Address"
-    },
-    "age": {
-      "type": "integer",
-      "format": "int32",
-      "minimum": 0
-    }
-  }
-}
-```
 
 ```yaml
 type: object
@@ -2884,15 +2803,6 @@ properties:
 
 For a simple string to string mapping:
 
-```json
-{
-  "type": "object",
-  "additionalProperties": {
-    "type": "string"
-  }
-}
-```
-
 ```yaml
 type: object
 additionalProperties:
@@ -2901,15 +2811,6 @@ additionalProperties:
 
 For a string to model mapping:
 
-```json
-{
-  "type": "object",
-  "additionalProperties": {
-    "$ref": "#/components/schemas/ComplexModel"
-  }
-}
-```
-
 ```yaml
 type: object
 additionalProperties:
@@ -2917,23 +2818,6 @@ additionalProperties:
 ```
 
 ###### Model with Annotated Enumeration
-
-```json
-{
-  "oneOf": [
-    {
-      "const": "RGB",
-      "title": "Red, Green, Blue",
-      "description": "Specify colors with the red, green, and blue additive color model"
-    },
-    {
-      "const": "CMYK",
-      "title": "Cyan, Magenta, Yellow, Black",
-      "description": "Specify colors with the cyan, magenta, yellow, and black subtractive color model"
-    }
-  ]
-}
-```
 
 ```yaml
 oneOf:
@@ -2946,28 +2830,6 @@ oneOf:
 ```
 
 ###### Model with Example
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "id": {
-      "type": "integer",
-      "format": "int64"
-    },
-    "name": {
-      "type": "string"
-    }
-  },
-  "required": ["name"],
-  "examples": [
-    {
-      "name": "Puma",
-      "id": 1
-    }
-  ]
-}
-```
 
 ```yaml
 type: object
@@ -2985,45 +2847,6 @@ examples:
 ```
 
 ###### Models with Composition
-
-```json
-{
-  "components": {
-    "schemas": {
-      "ErrorModel": {
-        "type": "object",
-        "required": ["message", "code"],
-        "properties": {
-          "message": {
-            "type": "string"
-          },
-          "code": {
-            "type": "integer",
-            "minimum": 100,
-            "maximum": 600
-          }
-        }
-      },
-      "ExtendedErrorModel": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ErrorModel"
-          },
-          {
-            "type": "object",
-            "required": ["rootCause"],
-            "properties": {
-              "rootCause": {
-                "type": "string"
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-```
 
 ```yaml
 components:
@@ -3053,70 +2876,113 @@ components:
 
 ###### Models with Polymorphism Support
 
-```json
-{
-  "components": {
-    "schemas": {
-      "Pet": {
-        "type": "object",
-        "discriminator": {
-          "propertyName": "petType"
-        },
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "petType": {
-            "type": "string"
-          }
-        },
-        "required": ["name", "petType"]
-      },
-      "Cat": {
-        "description": "A representation of a cat. Note that `Cat` will be used as the discriminating value.",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Pet"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "huntingSkill": {
-                "type": "string",
-                "description": "The measured skill for hunting",
-                "default": "lazy",
-                "enum": ["clueless", "lazy", "adventurous", "aggressive"]
-              }
-            },
-            "required": ["huntingSkill"]
-          }
-        ]
-      },
-      "Dog": {
-        "description": "A representation of a dog. Note that `Dog` will be used as the discriminating value.",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Pet"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "packSize": {
-                "type": "integer",
-                "format": "int32",
-                "description": "the size of the pack the dog is from",
-                "default": 0,
-                "minimum": 0
-              }
-            },
-            "required": ["packSize"]
-          }
-        ]
-      }
-    }
-  }
-}
+The following example describes a `Pet` model that can represent either a cat or a dog, as distinguished by the `petType` property. Each type of pet has other properties beyond those of the base `Pet` model. An instance without a `petType` property, or with a `petType` property that does not match either `cat` or `dog`, is invalid.
+
+```yaml
+components:
+  schemas:
+    Pet:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+        - petType
+      oneOf:
+        - $ref: '#/components/schemas/Cat'
+        - $ref: '#/components/schemas/Dog'
+    Cat:
+      description: A pet cat
+      type: object
+      properties:
+        petType:
+          const: 'cat'
+        huntingSkill:
+          type: string
+          description: The measured skill for hunting
+          enum:
+            - clueless
+            - lazy
+            - adventurous
+            - aggressive
+      required:
+        - huntingSkill
+    Dog:
+      description: A pet dog
+      type: object
+      properties:
+        petType:
+          const: 'dog'
+        packSize:
+          type: integer
+          format: int32
+          description: the size of the pack the dog is from
+          default: 0
+          minimum: 0
+      required:
+        - packSize
 ```
+
+###### Models with Polymorphism Support and a Discriminator Object
+
+The following example extends the example of the previous section by adding a [Discriminator Object](#discriminator-object) to the `Pet` schema. Note that the Discriminator Object is only a hint to the consumer of the API and does not change the validation outcome of the schema.
+
+```yaml
+components:
+  schemas:
+    Pet:
+      type: object
+      discriminator:
+        propertyName: petType
+        mapping:
+          cat: '#/components/schemas/Cat'
+          dog: '#/components/schemas/Dog'
+      properties:
+        name:
+          type: string
+      required:
+        - name
+        - petType
+      oneOf:
+        - $ref: '#/components/schemas/Cat'
+        - $ref: '#/components/schemas/Dog'
+    Cat:
+      description: A pet cat
+      type: object
+      properties:
+        petType:
+          const: 'cat'
+        huntingSkill:
+          type: string
+          description: The measured skill for hunting
+          enum:
+            - clueless
+            - lazy
+            - adventurous
+            - aggressive
+      required:
+        - huntingSkill
+    Dog:
+      description: A pet dog
+      type: object
+      properties:
+        petType:
+          const: 'dog'
+        packSize:
+          type: integer
+          format: int32
+          description: the size of the pack the dog is from
+          default: 0
+          minimum: 0
+      required:
+        - petType
+        - packSize
+```
+
+###### Models with Polymorphism Support using allOf and a Discriminator Object
+
+It is also possible to describe polymorphic models using `allOf`. The following example uses `allOf` with a [Discriminator Object](#discriminator-object) to describe a polymorphic `Pet` model.
 
 ```yaml
 components:
@@ -3167,69 +3033,7 @@ components:
 
 ###### Generic Data Structure Model
 
-```JSON
-{
-  "components": {
-    "schemas": {
-      "genericArrayComponent": {
-        "$id": "fully_generic_array",
-        "type": "array",
-        "items": {
-          "$dynamicRef": "#generic-array"
-        },
-        "$defs": {
-          "allowAll": {
-            "$dynamicAnchor": "generic-array"
-          }
-        }
-      },
-      "numberArray": {
-        "$id": "array_of_numbers",
-        "$ref": "fully_generic_array",
-        "$defs": {
-          "numbersOnly": {
-            "$dynamicAnchor": "generic-array",
-            "type": "number"
-          }
-        }
-      },
-      "stringArray": {
-        "$id": "array_of_strings",
-        "$ref": "fully_generic_array",
-        "$defs": {
-          "stringsOnly": {
-            "$dynamicAnchor": "generic-array",
-            "type": "string"
-          }
-        }
-      },
-      "objWithTypedArray": {
-        "$id": "obj_with_typed_array",
-        "type": "object",
-        "required": ["dataType", "data"],
-        "properties": {
-          "dataType": {
-            "enum": ["string", "number"]
-          }
-        },
-        "oneOf": [{
-          "properties": {
-            "dataType": {"const": "string"},
-            "data": {"$ref": "array_of_strings"}
-          }
-        }, {
-          "properties": {
-            "dataType": {"const": "number"},
-            "data": {"$ref": "array_of_numbers"}
-          }
-        }]
-      }
-    }
-  }
-}
-```
-
-```YAML
+```yaml
 components:
   schemas:
     genericArrayComponent:
@@ -3280,7 +3084,9 @@ components:
 
 #### Discriminator Object
 
-When request bodies or response payloads may be one of a number of different schemas, a Discriminator Object gives a hint about the expected schema of the document.
+When request bodies or response payloads may be one of a number of different schemas, these should use the JSON Schema `anyOf` or `oneOf` keywords to describe the possible schemas (see [Composition and Inheritance](#composition-and-inheritance-polymorphism)).
+
+A polymorphic schema MAY include a Discriminator Object, which defines the name of the property that may be used as a hint for which schema of the `anyOf` or `oneOf`, or which schema that references the current schema in an `allOf`, is expected to validate the structure of the model.
 This hint can be used to aid in serialization, deserialization, and validation.
 The Discriminator Object does this by implicitly or explicitly associating the possible values of a named property with alternative schemas.
 
@@ -3290,8 +3096,9 @@ Note that `discriminator` MUST NOT change the validation outcome of the schema.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="property-name"></a>propertyName | `string` | **REQUIRED**. The name of the property in the payload that will hold the discriminating value. This property SHOULD be required in the payload schema, as the behavior when the property is absent is undefined. |
+| <a name="property-name"></a>propertyName | `string` | **REQUIRED**. The name of the discriminating property in the payload that will hold the discriminating value. The discriminating property MAY be defined as required or optional, but when defined as optional the Discriminator Object MUST include a `defaultMapping` field that specifies which schema is expected to validate the structure of the model when the discriminating property is not present. |
 | <a name="discriminator-mapping"></a> mapping | Map[`string`, `string`] | An object to hold mappings between payload values and schema names or URI references. |
+| <a name="default"></a> defaultMapping | `string` | The schema name or URI reference to a schema that is expected to validate the structure of the model when the discriminating property is not present in the payload or contains a value for which there is no explicit or implicit mapping. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -3313,11 +3120,32 @@ The behavior of any configuration of `oneOf`, `anyOf`, `allOf` and `discriminato
 The value of the property named in `propertyName` is used as the name of the associated schema under the [Components Object](#components-object), _unless_ a `mapping` is present for that value.
 The `mapping` entry maps a specific property value to either a different schema component name, or to a schema identified by a URI.
 When using implicit or explicit schema component names, inline `oneOf` or `anyOf` subschemas are not considered.
-The behavior of a `mapping` value that is both a valid schema name and a valid relative URI reference is implementation-defined, but it is RECOMMENDED that it be treated as a schema name.
+The behavior of a `mapping` value or `defaultMapping` value that is both a valid schema name and a valid relative URI reference is implementation-defined, but it is RECOMMENDED that it be treated as a schema name.
 To ensure that an ambiguous value (e.g. `"foo"`) is treated as a relative URI reference by all implementations, authors MUST prefix it with the `"."` path segment (e.g. `"./foo"`).
 
 Mapping keys MUST be string values, but tooling MAY convert response values to strings for comparison.
 However, the exact nature of such conversions are implementation-defined.
+
+##### Optional discriminating property
+
+When the discriminating property is defined as optional, the [Discriminator Object](#discriminator-object) MUST include a `defaultMapping` field that specifies a schema that is expected to validate the structure of the model when the discriminating property is not present in the payload or contains a value for which there is no explicit or implicit mapping. This allows the schema to still be validated correctly even if the discriminating property is missing.
+
+The primary use case for an optional discriminating property is to allow a schema to be extended with a discriminator without breaking existing clients that do not provide the discriminating property.
+
+When the discriminating property is defined as optional, it is important that each subschema that defines a value for the discriminating property also define the property as required, since this is no longer enforced by the parent schema.
+
+The `defaultMapping` schema is also expected to validate the structure of the model when the discriminating property is present but contains a value for which there is no explicit or implicit mapping. This is typically expressed in the `defaultMapping` schema by excluding any instances with mapped values of the discriminating property, e.g.
+
+```yaml
+OtherPet:
+  type: object
+  properties:
+    petType:
+      not:
+        enum: ['cat', 'dog']
+```
+
+This prevents the `defaultMapping` schema from validating a payload that includes the discriminating property with a mapped discriminating value, which would cause a validation to fail when polymorphism is described using the `oneOf` JSON schema keyword.
 
 ##### Examples
 
@@ -3333,7 +3161,7 @@ MyResponseType:
     - $ref: '#/components/schemas/Lizard'
 ```
 
-which means the payload _MUST_, by validation, match exactly one of the schemas described by `Cat`, `Dog`, or `Lizard`. Deserialization of a `oneOf` can be a costly operation, as it requires determining which schema matches the payload and thus should be used in deserialization. This problem also exists for `anyOf` schemas. A `discriminator` MAY be used as a "hint" to improve the efficiency of selection of the matching schema. The `discriminator` field cannot change the validation result of the `oneOf`, it can only help make the deserialization more efficient and provide better error messaging. We can specify the exact field that tells us which schema is expected to match the instance:
+which means a valid payload has to match exactly one of the schemas described by `Cat`, `Dog`, or `Lizard`. Deserialization of a `oneOf` can be a costly operation, as it requires determining which schema matches the payload and thus should be used in deserialization. This problem also exists for `anyOf` schemas. A `discriminator` can be used as a "hint" to improve the efficiency of selection of the matching schema. The [Discriminator Object](#discriminator-object) cannot change the validation result of the `oneOf`, it can only help make the deserialization more efficient and provide better error messaging. We can specify the exact field that tells us which schema is expected to match the instance:
 
 ```yaml
 MyResponseType:
@@ -3356,7 +3184,7 @@ The expectation now is that a property with name `petType` _MUST_ be present in 
 
 will indicate that the `Cat` schema is expected to match this payload.
 
-In scenarios where the value of the `discriminator` field does not match the schema name or implicit mapping is not possible, an optional `mapping` definition MAY be used:
+In scenarios where the value of the discriminating property does not match the schema name or implicit mapping is not possible, an optional `mapping` definition can be used:
 
 ```yaml
 MyResponseType:
@@ -3375,6 +3203,30 @@ MyResponseType:
 Here the discriminating value of `dog` will map to the schema `#/components/schemas/Dog`, rather than the default (implicit) value of `#/components/schemas/dog`. If the discriminating value does not match an implicit or explicit mapping, no schema can be determined and validation SHOULD fail.
 
 When used in conjunction with the `anyOf` construct, the use of the discriminator can avoid ambiguity for serializers/deserializers where multiple schemas may satisfy a single payload.
+
+When the discriminating property is defined as optional, the Discriminator Object has to include a `defaultMapping` field that specifies a schema of the `anyOf` or `oneOf` is expected to validate the structure of the model when the discriminating property is not present in the payload. This allows the schema to still be validated correctly even if the discriminator property is missing.
+
+For example:
+
+```yaml
+MyResponseType:
+  oneOf:
+    - $ref: '#/components/schemas/Cat'
+    - $ref: '#/components/schemas/Dog'
+    - $ref: '#/components/schemas/Lizard'
+    - $ref: '#/components/schemas/OtherPet'
+  discriminator:
+    propertyName: petType
+    defaultMapping: OtherPet
+OtherPet:
+  type: object
+  properties:
+    petType:
+      not:
+        enum: ['Cat', 'Dog', 'Lizard']
+```
+
+In this example, if the `petType` property is not present in the payload, or if the value of `petType` is not "Cat", "Dog", or "Lizard", then the payload should validate against the `OtherPet` schema.
 
 This example shows the `allOf` usage, which avoids needing to reference all child schemas in the parent:
 
@@ -3441,72 +3293,100 @@ will map to `#/components/schemas/Dog` because the `dog` entry in the `mapping` 
 #### XML Object
 
 A metadata object that allows for more fine-tuned XML model definitions.
-
-When using arrays, XML element names are _not_ inferred (for singular/plural forms) and the `name` field SHOULD be used to add that information.
-See examples for expected behavior.
+When using a Schema Object with XML, if no XML Object is present, the behavior is determined by the XML Object's default field values.
 
 ##### Fixed Fields
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="xml-name"></a>name | `string` | Replaces the name of the element/attribute used for the described schema property. When defined within `items`, it will affect the name of the individual XML elements within the list. When defined alongside `type` being `"array"` (outside the `items`), it will affect the wrapping element if and only if `wrapped` is `true`. If `wrapped` is `false`, it will be ignored. |
-| <a name="xml-namespace"></a>namespace | `string` | The URI of the namespace definition. Value MUST be in the form of a non-relative URI. |
+| <a name="xml-node-type"></a>nodeType | `string` | One of `element`, `attribute`, `text`, `cdata`, or `none`, as explained under [XML Node Types](#xml-node-types).  The default value is `none` if `$ref`, `$dynamicRef`, or `type: "array"` is present in the [Schema Object](#schema-object) containing the XML Object, and `element` otherwise. |
+| <a name="xml-name"></a>name | `string` | Sets the name of the element/attribute corresponding to the schema, replacing the name that was inferred as described under [XML Node Names](#xml-node-names). This field SHALL be ignored if the `nodeType` is `text`, `cdata`, or `none`. |
+| <a name="xml-namespace"></a>namespace | `string` | The IRI ([[RFC3987]]) of the namespace definition. Value MUST be in the form of a non-relative IRI. |
 | <a name="xml-prefix"></a>prefix | `string` | The prefix to be used for the [name](#xml-name). |
-| <a name="xml-attribute"></a>attribute | `boolean` | Declares whether the property definition translates to an attribute instead of an element. Default value is `false`. |
-| <a name="xml-wrapped"></a>wrapped | `boolean` | MAY be used only for an array definition. Signifies whether the array is wrapped (for example, `<books><book/><book/></books>`) or unwrapped (`<book/><book/>`). Default value is `false`. The definition takes effect only when defined alongside `type` being `"array"` (outside the `items`). |
+| <a name="xml-attribute"></a>attribute | `boolean` | Declares whether the property definition translates to an attribute instead of an element. Default value is `false`. If `nodeType` is present, this field MUST NOT be present.<br /><br />**Deprecated:** Use `nodeType: "attribute"` in place of `attribute: true` |
+| <a name="xml-wrapped"></a>wrapped | `boolean` | MAY be used only for an array definition. Signifies whether the array is wrapped (for example, `<books><book/><book/></books>`) or unwrapped (`<book/><book/>`). Default value is `false`. The definition takes effect only when defined alongside `type` being `"array"` (outside the `items`). If `nodeType` is present, this field MUST NOT be present.<br /><br />**Deprecated:** Set `nodeType: "element"` explicitly in place of `wrapped: true` |
+
+Note that when generating an XML document from object data, the order of the nodes is undefined.
+Use `prefixItems` to control node ordering.
+
+See [Appendix B](#appendix-b-data-type-conversion) for a discussion of converting values of various types to string representations.
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
+##### XML Node Types
+
+Each Schema Object describes a particular type of XML [[!DOM]] [node](https://dom.spec.whatwg.org/#interface-node) which is specified by the `nodeType` field, which has the following possible values.
+Except for the special value `none`, these values have numeric equivalents in the DOM specification which are given in parentheses after the name:
+
+* `element` (1): The schema represents an element and describes its contents
+* `attribute` (2): The schema represents an attribute and describes its value
+* `text` (3): The schema represents a text node (parsed character data)
+* `cdata` (4): The schema represents a CDATA section
+* `none`: The schema does not correspond to any node in the XML document, and the nodes corresponding to its subschema(s) are included directly under its parent schema's node
+
+The `none` type is useful for JSON Schema constructs that require more Schema Objects than XML nodes, such as a schema containing only `$ref` that exists to facilitate re-use rather than imply any structure.
+
+###### Modeling Element Lists
+
+For historical compatibility, schemas of `type: "array"` default to `nodeType: "none"`, placing the nodes for each array item directly under the parent node.
+This also aligns with the inferred naming behavior defined under [XML Node Names](#xml-node-names).
+
+To produce an element wrapping the list, set an explicit `nodeType: "element"` on the `type: "array"` schema.
+When doing so, it is advisable to set an explicit name on either the wrapping element or the item elements to avoid them having the same inferred name.
+See examples for expected behavior.
+
+###### Implicit and Explicit `text` Nodes
+
+If an `element` node has a primitive type, then the schema also produces an implicit `text` node described by the schema for the contents of the `element` node named by the property name (or `name` field).
+
+Explicit `text` nodes are necessary if an element has both attributes and content.
+
+Note that placing two `text` nodes adjacent to each other is ambiguous for parsing, and the resulting behavior is implementation-defined.
+
+##### XML Node Names
+
+The `element` and `attribute` node types require a name, which MUST be inferred from the schema as follows, unless overridden by the `name` field:
+
+* For schemas directly under the [Components Object's](#components-object) `schemas` field, the component name is the inferred name.
+* For property schemas, and for array item schemas under a property schema, the property name is the inferred name
+* In all other cases, such as an inline schema under a [Media Type Object's](#media-type-object) `schema` field, no name can be inferred and an XML Object with a `name` field MUST be present
+
+Note that when using arrays, singular vs plural forms are _not_ inferred, and must be set explicitly.
+
+##### Namespace Limitations
+
 The `namespace` field is intended to match the syntax of [XML namespaces](https://www.w3.org/TR/xml-names11/), although there are a few caveats:
 
-* Versions 3.1.0, 3.0.3, and earlier of this specification erroneously used the term "absolute URI" instead of "non-relative URI", so authors using namespaces that include a fragment should check tooling support carefully.
-* XML allows but discourages relative URI-references, while this specification outright forbids them.
-* XML 1.1 allows IRIs ([RFC3987](https://datatracker.ietf.org/doc/html/rfc3987)) as namespaces, and specifies that namespaces are compared without any encoding or decoding, which means that IRIs encoded to meet this specification's URI syntax requirement cannot be compared to IRIs as-is.
+* Versions 3.1.0, 3.0.3, and earlier of this specification erroneously used the term "absolute URI" instead of "non-relative URI" ("non-relative IRI" as of OAS v3.2.0), so authors using namespaces that include a fragment should check tooling support carefully.
+* XML allows but discourages relative IRI-references, while this specification outright forbids them.
 
 ##### XML Object Examples
 
-Each of the following examples represent the value of the `properties` keyword in a [Schema Object](#schema-object) that is omitted for brevity.
-The JSON and YAML representations of the `properties` value are followed by an example XML representation produced for the single property shown.
+The Schema Objects are followed by an example XML representation produced for the schema shown.
+For examples using `attribute` or `wrapped`, please see version 3.1 of the OpenAPI Specification.
 
-###### No XML Element
+###### No XML Object
 
-Basic string property:
-
-```json
-{
-  "animals": {
-    "type": "string"
-  }
-}
-```
+Basic string property (`nodeType` is `element` by default):
 
 ```yaml
-animals:
-  type: string
+properties:
+  animals:
+    type: string
 ```
 
 ```xml
 <animals>...</animals>
 ```
 
-Basic string array property ([`wrapped`](#xml-wrapped) is `false` by default):
-
-```json
-{
-  "animals": {
-    "type": "array",
-    "items": {
-      "type": "string"
-    }
-  }
-}
-```
+Basic string array property (`nodeType` is `none` by default):
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+properties:
+  animals:
+    type: array
+    items:
+      type: string
 ```
 
 ```xml
@@ -3517,22 +3397,12 @@ animals:
 
 ###### XML Name Replacement
 
-```json
-{
-  "animals": {
-    "type": "string",
-    "xml": {
-      "name": "animal"
-    }
-  }
-}
-```
-
 ```yaml
-animals:
-  type: string
-  xml:
-    name: animal
+properties:
+  animals:
+    type: string
+    xml:
+      name: animal
 ```
 
 ```xml
@@ -3541,46 +3411,24 @@ animals:
 
 ###### XML Attribute, Prefix and Namespace
 
-In this example, a full model definition is shown.
-
-```json
-{
-  "Person": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "integer",
-        "format": "int32",
-        "xml": {
-          "attribute": true
-        }
-      },
-      "name": {
-        "type": "string",
-        "xml": {
-          "namespace": "https://example.com/schema/sample",
-          "prefix": "sample"
-        }
-      }
-    }
-  }
-}
-```
+Note that the name of the root XML element comes from the component name.
 
 ```yaml
-Person:
-  type: object
-  properties:
-    id:
-      type: integer
-      format: int32
-      xml:
-        attribute: true
-    name:
-      type: string
-      xml:
-        namespace: https://example.com/schema/sample
-        prefix: sample
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          xml:
+            attribute: true
+        name:
+          type: string
+          xml:
+            namespace: https://example.com/schema/sample
+            prefix: sample
 ```
 
 ```xml
@@ -3593,27 +3441,14 @@ Person:
 
 Changing the element names:
 
-```json
-{
-  "animals": {
-    "type": "array",
-    "items": {
-      "type": "string",
-      "xml": {
-        "name": "animal"
-      }
-    }
-  }
-}
-```
-
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
-    xml:
-      name: animal
+properties:
+  animals:
+    type: array
+    items:
+      type: string
+      xml:
+        name: animal
 ```
 
 ```xml
@@ -3621,34 +3456,18 @@ animals:
 <animal>value</animal>
 ```
 
-The external `name` field has no effect on the XML:
-
-```json
-{
-  "animals": {
-    "type": "array",
-    "items": {
-      "type": "string",
-      "xml": {
-        "name": "animal"
-      }
-    },
-    "xml": {
-      "name": "aliens"
-    }
-  }
-}
-```
+The `name` field for the `type: "array"` schema has no effect because the default `nodeType` for that object is `none`:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+properties:
+  animals:
+    type: array
+    items:
+      type: string
+      xml:
+        name: animal
     xml:
-      name: animal
-  xml:
-    name: aliens
+      name: aliens
 ```
 
 ```xml
@@ -3656,29 +3475,16 @@ animals:
 <animal>value</animal>
 ```
 
-Even when the array is wrapped, if a name is not explicitly defined, the same name will be used both internally and externally:
-
-```json
-{
-  "animals": {
-    "type": "array",
-    "items": {
-      "type": "string"
-    },
-    "xml": {
-      "wrapped": true
-    }
-  }
-}
-```
+Even when a wrapping element is explicitly created by setting `nodeType` to `element`, if a name is not explicitly defined, the same name will be used for both the wrapping element and the list item elements:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
-  xml:
-    wrapped: true
+properties:
+  animals:
+    type: array
+    items:
+      type: string
+    xml:
+      nodeType: element
 ```
 
 ```xml
@@ -3690,32 +3496,16 @@ animals:
 
 To overcome the naming problem in the example above, the following definition can be used:
 
-```json
-{
-  "animals": {
-    "type": "array",
-    "items": {
-      "type": "string",
-      "xml": {
-        "name": "animal"
-      }
-    },
-    "xml": {
-      "wrapped": true
-    }
-  }
-}
-```
-
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+properties:
+  animals:
+    type: array
+    items:
+      type: string
+      xml:
+        name: animal
     xml:
-      name: animal
-  xml:
-    wrapped: true
+      nodeType: element
 ```
 
 ```xml
@@ -3725,36 +3515,19 @@ animals:
 </animals>
 ```
 
-Affecting both internal and external names:
-
-```json
-{
-  "animals": {
-    "type": "array",
-    "items": {
-      "type": "string",
-      "xml": {
-        "name": "animal"
-      }
-    },
-    "xml": {
-      "name": "aliens",
-      "wrapped": true
-    }
-  }
-}
-```
+Affecting both wrapping element and item element names:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+properties:
+  animals:
+    type: array
+    items:
+      type: string
+      xml:
+        name: animal
     xml:
-      name: animal
-  xml:
-    name: aliens
-    wrapped: true
+      name: aliens
+      nodeType: element
 ```
 
 ```xml
@@ -3764,31 +3537,17 @@ animals:
 </aliens>
 ```
 
-If we change the external element but not the internal ones:
-
-```json
-{
-  "animals": {
-    "type": "array",
-    "items": {
-      "type": "string"
-    },
-    "xml": {
-      "name": "aliens",
-      "wrapped": true
-    }
-  }
-}
-```
+If we change the wrapping element name but not the item element names:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
-  xml:
-    name: aliens
-    wrapped: true
+properties:
+  animals:
+    type: array
+    items:
+      type: string
+    xml:
+      name: aliens
+      nodeType: element
 ```
 
 ```xml
@@ -3796,13 +3555,103 @@ animals:
   <aliens>value</aliens>
   <aliens>value</aliens>
 </aliens>
+```
+
+###### Elements With Attributes And Text
+
+```yaml
+properties:
+  animals:
+    type: array
+    xml:
+      nodeType: element
+      name: animals
+    items:
+      properties:
+        kind:
+          type: string
+          xml:
+            nodeType: attribute
+            name: animal
+        content:
+          type: string
+          xml:
+            nodeType: text
+```
+
+```xml
+<animals>
+  <animal kind="Cat">Fluffy</animals>
+  <animal kind="Dog">Fido</animals>
+<animals>
+```
+
+###### Referenced Element With CDATA
+
+In this example, no element is created for the Schema Object that contains only  the `$ref`, as its `nodeType` defaults to `none`.
+It is necessary to create a subschema for the CDATA section as otherwise the content would be treated as an implicit node of type `text`.
+
+```yaml
+paths:
+  /docs:
+    get:
+      responses:
+        "200":
+          content:
+            application/xml:
+              $ref: "#/components/schemas/Documentation"
+components:
+  schemas:
+    Documentation:
+      type: object
+      properties:
+        content:
+          type: string
+          contentMediaType: text/html
+          xml:
+            nodeType: cdata
+```
+
+```xml
+<Documentation>
+  <![CDATA[<html><head><title>Awesome Docs</title></head><body></body><html>]]>
+</Documentation>
+```
+
+###### Element With Text Before and After a Child Element
+
+In this example, `prefixItems` is used to control the ordering.
+Since `prefixItems` works with arrays, we need to explicitly set the `nodeType` to `element`.
+Within `prefixItems`, we need to explicitly set the `nodeType` of the `text` nodes, but do not need a name, while the data node's default `nodeType` of `element` is correct, but it needs an explicit `name`:
+
+```yaml
+components:
+  schemas:
+    Report:
+      type: array
+      xml:
+        nodeType: element
+      prefixItems:
+      - type: string
+        xml:
+          nodeType: text
+      - type: number
+        xml:
+          name: data
+      - type: string
+        xml:
+          nodeType: text
+```
+
+```xml
+<Report>Some preamble text.<data>42</data>Some postamble text.</Report>
 ```
 
 #### Security Scheme Object
 
 Defines a security scheme that can be used by the operations.
 
-Supported schemes are HTTP authentication, an API key (either as a header, a cookie parameter or as a query parameter), mutual TLS (use of a client certificate), OAuth2's common flows (implicit, password, client credentials and authorization code) as defined in [RFC6749](https://tools.ietf.org/html/rfc6749), and [[OpenID-Connect-Core]].
+Supported schemes are HTTP authentication, an API key (either as a header, a cookie parameter or as a query parameter), mutual TLS (use of a client certificate), OAuth2's common flows (implicit, password, client credentials and authorization code) as defined in [RFC6749](https://tools.ietf.org/html/rfc6749), OAuth2 device authorization flow as defined in [RFC8628](https://tools.ietf.org/html/rfc8628), and [[OpenID-Connect-Core]].
 Please note that as of 2020, the implicit flow is about to be deprecated by [OAuth 2.0 Security Best Current Practice](https://tools.ietf.org/html/draft-ietf-oauth-security-topics). Recommended for most use cases is Authorization Code Grant flow with PKCE.
 
 ##### Fixed Fields
@@ -3810,13 +3659,16 @@ Please note that as of 2020, the implicit flow is about to be deprecated by [OAu
 | Field Name | Type | Applies To | Description |
 | ---- | :----: | ---- | ---- |
 | <a name="security-scheme-type"></a>type | `string` | Any | **REQUIRED**. The type of the security scheme. Valid values are `"apiKey"`, `"http"`, `"mutualTLS"`, `"oauth2"`, `"openIdConnect"`. |
+| <a name="security-scheme-summary"></a>summary | `string` | Any | A short summary of the security scheme. |
 | <a name="security-scheme-description"></a>description | `string` | Any | A description for security scheme. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
 | <a name="security-scheme-name"></a>name | `string` | `apiKey` | **REQUIRED**. The name of the header, query or cookie parameter to be used. |
 | <a name="security-scheme-in"></a>in | `string` | `apiKey` | **REQUIRED**. The location of the API key. Valid values are `"query"`, `"header"`, or `"cookie"`. |
-| <a name="security-scheme-scheme"></a>scheme | `string` | `http` | **REQUIRED**. The name of the HTTP Authentication scheme to be used in the [Authorization header as defined in RFC7235](https://tools.ietf.org/html/rfc7235#section-5.1). The values used SHOULD be registered in the [IANA Authentication Scheme registry](https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml). The value is case-insensitive, as defined in [RFC7235](https://datatracker.ietf.org/doc/html/rfc7235#section-2.1). |
+| <a name="security-scheme-scheme"></a>scheme | `string` | `http` | **REQUIRED**. The name of the HTTP Authentication scheme to be used in the [Authorization header as defined in RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-16.4.1). The values used SHOULD be registered in the [IANA Authentication Scheme registry](https://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml). The value is case-insensitive, as defined in [RFC9110](https://www.rfc-editor.org/rfc/rfc9110.html#section-11.1). |
 | <a name="security-scheme-bearer-format"></a>bearerFormat | `string` | `http` (`"bearer"`) | A hint to the client to identify how the bearer token is formatted. Bearer tokens are usually generated by an authorization server, so this information is primarily for documentation purposes. |
 | <a name="security-scheme-flows"></a>flows | [OAuth Flows Object](#oauth-flows-object) | `oauth2` | **REQUIRED**. An object containing configuration information for the flow types supported. |
 | <a name="security-scheme-open-id-connect-url"></a>openIdConnectUrl | `string` | `openIdConnect` | **REQUIRED**. [Well-known URL](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig) to discover the [[OpenID-Connect-Discovery]] [provider metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata). |
+| <a name="security-scheme-oauth2-metadata-url"></a>oauth2MetadataUrl | `string` | `oauth2` | URL to the oauth2 authorization server metadata [RFC8414](https://datatracker.ietf.org/doc/html/rfc8414). TLS is required. |
+| <a name="security-scheme-deprecated"></a>deprecated | `boolean` | Any | Declares this security scheme to be deprecated. Consumers SHOULD refrain from usage of the declared scheme. Default value is `false`. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -3824,27 +3676,12 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 ###### Basic Authentication Example
 
-```json
-{
-  "type": "http",
-  "scheme": "basic"
-}
-```
-
 ```yaml
 type: http
 scheme: basic
 ```
 
 ###### API Key Example
-
-```json
-{
-  "type": "apiKey",
-  "name": "api-key",
-  "in": "header"
-}
-```
 
 ```yaml
 type: apiKey
@@ -3854,14 +3691,6 @@ in: header
 
 ###### JWT Bearer Example
 
-```json
-{
-  "type": "http",
-  "scheme": "bearer",
-  "bearerFormat": "JWT"
-}
-```
-
 ```yaml
 type: http
 scheme: bearer
@@ -3870,34 +3699,12 @@ bearerFormat: JWT
 
 ###### MutualTLS Example
 
-```json
-{
-  "type": "mutualTLS",
-  "description": "Cert must be signed by example.com CA"
-}
-```
-
 ```yaml
 type: mutualTLS
 description: Cert must be signed by example.com CA
 ```
 
 ###### Implicit OAuth2 Example
-
-```json
-{
-  "type": "oauth2",
-  "flows": {
-    "implicit": {
-      "authorizationUrl": "https://example.com/api/oauth/dialog",
-      "scopes": {
-        "write:pets": "modify pets in your account",
-        "read:pets": "read your pets"
-      }
-    }
-  }
-}
-```
 
 ```yaml
 type: oauth2
@@ -3921,6 +3728,7 @@ Allows configuration of the supported OAuth Flows.
 | <a name="oauth-flows-password"></a>password | [OAuth Flow Object](#oauth-flow-object) | Configuration for the OAuth Resource Owner Password flow |
 | <a name="oauth-flows-client-credentials"></a>clientCredentials | [OAuth Flow Object](#oauth-flow-object) | Configuration for the OAuth Client Credentials flow. Previously called `application` in OpenAPI 2.0. |
 | <a name="oauth-flows-authorization-code"></a>authorizationCode | [OAuth Flow Object](#oauth-flow-object) | Configuration for the OAuth Authorization Code flow. Previously called `accessCode` in OpenAPI 2.0. |
+| <a name="oauth-flows-device-authorization"></a>deviceAuthorization | [OAuth Flow Object](#oauth-flow-object) | Configuration for the OAuth Device Authorization flow. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -3933,36 +3741,14 @@ Configuration details for a supported OAuth Flow
 | Field Name | Type | Applies To | Description |
 | ---- | :----: | ---- | ---- |
 | <a name="oauth-flow-authorization-url"></a>authorizationUrl | `string` | `oauth2` (`"implicit"`, `"authorizationCode"`) | **REQUIRED**. The authorization URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
-| <a name="oauth-flow-token-url"></a>tokenUrl | `string` | `oauth2` (`"password"`, `"clientCredentials"`, `"authorizationCode"`) | **REQUIRED**. The token URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
+| <a name="oauth-flow-device-authorization-url"></a>deviceAuthorizationUrl | `string` | `oauth2` (`"deviceAuthorization"`) | **REQUIRED**. The device authorization URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
+| <a name="oauth-flow-token-url"></a>tokenUrl | `string` | `oauth2` (`"password"`, `"clientCredentials"`, `"authorizationCode"`, `"deviceAuthorization"`) | **REQUIRED**. The token URL to be used for this flow. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
 | <a name="oauth-flow-refresh-url"></a>refreshUrl | `string` | `oauth2` | The URL to be used for obtaining refresh tokens. This MUST be in the form of a URL. The OAuth2 standard requires the use of TLS. |
 | <a name="oauth-flow-scopes"></a>scopes | Map[`string`, `string`] | `oauth2` | **REQUIRED**. The available scopes for the OAuth2 security scheme. A map between the scope name and a short description for it. The map MAY be empty. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
 ##### OAuth Flow Object Example
-
-```JSON
-{
-  "type": "oauth2",
-  "flows": {
-    "implicit": {
-      "authorizationUrl": "https://example.com/api/oauth/dialog",
-      "scopes": {
-        "write:pets": "modify pets in your account",
-        "read:pets": "read your pets"
-      }
-    },
-    "authorizationCode": {
-      "authorizationUrl": "https://example.com/api/oauth/dialog",
-      "tokenUrl": "https://example.com/api/oauth/token",
-      "scopes": {
-        "write:pets": "modify pets in your account",
-        "read:pets": "read your pets"
-      }
-    }
-  }
-}
-```
 
 ```yaml
 type: oauth2
@@ -3983,7 +3769,12 @@ flows:
 #### Security Requirement Object
 
 Lists the required security schemes to execute this operation.
-The name used for each property MUST correspond to a security scheme declared in the [Security Schemes](#security-scheme-object) under the [Components Object](#components-object).
+
+The name used for each property MUST either correspond to a security scheme declared in the [Security Schemes](#components-security-schemes) under the [Components Object](#components-object), or be the URI of a Security Scheme Object.
+Property names that are identical to a component name under the Components Object MUST be treated as a component name.
+To reference a Security Scheme with a single-segment relative URI reference (e.g. `foo`) that collides with a component name (e.g. `#/components/securitySchemes/foo`), use the `.` path segment (e.g. `./foo`).
+
+Using a Security Scheme component name that appears to be a URI is NOT RECOMMENDED, as the precedence of component-name-matching over URI resolution, which is necessary to maintain compatibility with prior OAS versions, is counter-intuitive. See also [Security Considerations](#security-considerations).
 
 A Security Requirement Object MAY refer to multiple security schemes in which case all schemes MUST be satisfied for a request to be authorized.
 This enables support for scenarios where multiple query parameters or HTTP headers are required to convey security information.
@@ -3997,7 +3788,7 @@ An empty Security Requirement Object (`{}`) indicates anonymous access is suppor
 
 | Field Pattern | Type | Description |
 | ---- | :----: | ---- |
-| <a name="security-requirements-name"></a>{name} | [`string`] | Each name MUST correspond to a security scheme which is declared in the [Security Schemes](#security-scheme-object) under the [Components Object](#components-object). If the security scheme is of type `"oauth2"` or `"openIdConnect"`, then the value is a list of scope names required for the execution, and the list MAY be empty if authorization does not require a specified scope. For other security scheme types, the array MAY contain a list of role names which are required for the execution, but are not otherwise defined or exchanged in-band. |
+| <a name="security-requirements-name"></a>{name} | [`string`] | Each name or URI MUST correspond to a security scheme as described above. If the security scheme is of type `"oauth2"` or `"openIdConnect"`, then the value is a list of scope names required for the execution, and the list MAY be empty if authorization does not require a specified scope. For other security scheme types, the array MAY contain a list of role names which are required for the execution, but are not otherwise defined or exchanged in-band. |
 
 ##### Security Requirement Object Examples
 
@@ -4005,23 +3796,13 @@ See also [Appendix F: Resolving Security Requirements in a Referenced Document](
 
 ###### Non-OAuth2 Security Requirement
 
-```json
-{
-  "api_key": []
-}
-```
-
 ```yaml
 api_key: []
 ```
 
 ###### OAuth2 Security Requirement
 
-```json
-{
-  "petstore_auth": ["write:pets", "read:pets"]
-}
-```
+This example uses a component name for the Security Scheme.
 
 ```yaml
 petstore_auth:
@@ -4031,18 +3812,9 @@ petstore_auth:
 
 ###### Optional OAuth2 Security
 
-Optional OAuth2 security as would be defined in an <a href="#openapi-object">OpenAPI Object</a> or an <a href="#operation-object">Operation Object</a>:
+This example uses a relative URI reference for the Security Scheme.
 
-```json
-{
-  "security": [
-    {},
-    {
-      "petstore_auth": ["write:pets", "read:pets"]
-    }
-  ]
-}
-```
+Optional OAuth2 security as would be defined in an <a href="#openapi-object">OpenAPI Object</a> or an <a href="#operation-object">Operation Object</a>:
 
 ```yaml
 security:
@@ -4089,8 +3861,8 @@ OpenAPI Descriptions use a combination of JSON, YAML, and JSON Schema, and there
 
 * [JSON](https://www.iana.org/assignments/media-types/application/json)
 * [YAML](https://www.iana.org/assignments/media-types/application/yaml)
-* [JSON Schema Core](https://tools.ietf.org/html/draft-bhutton-json-schema-00#section-13)
-* [JSON Schema Validation](https://tools.ietf.org/html/draft-bhutton-json-schema-validation-00#section-10)
+* [JSON Schema Core](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-13)
+* [JSON Schema Validation](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-10)
 
 ### Tooling and Usage Scenarios
 
@@ -4099,6 +3871,11 @@ In addition, OpenAPI Descriptions are processed by a wide variety of tooling for
 ### Security Schemes
 
 An OpenAPI Description describes the security schemes used to protect the resources it defines. The security schemes available offer varying degrees of protection. Factors such as the sensitivity of the data and the potential impact of a security breach should guide the selection of security schemes for the API resources. Some security schemes, such as basic auth and OAuth Implicit flow, are supported for compatibility with existing APIs. However, their inclusion in OpenAPI does not constitute an endorsement of their use, particularly for highly sensitive data or operations.
+
+The rules for connecting a [Security Requirement Object](#security-requirement-object) to a [Security Scheme Object](#security-scheme-object) under a [Components Object](#components-object) are ambiguous in a way that could be exploited. Specifically:
+
+* It is implementation-defined whether a component name used by a Security Requirement Object in a referenced document is resolved from the entry document (RECOMMENDED) or the referenced document.
+* A Security Requirement Object that uses a URI to identify a Security Scheme Object can have the URI resolution hijacked by providing a Security Scheme component name identical to the URI, as the name lookup behavior takes precedence over URI resolution for compatibility with previous versions of the OAS.
 
 ### Handling External Resources
 
@@ -4139,7 +3916,7 @@ Certain fields allow the use of Markdown which can contain HTML including script
 
 Serializing typed data to plain text, which can occur in `text/plain` message bodies or `multipart` parts, as well as in the `application/x-www-form-urlencoded` format in either URL query strings or message bodies, involves significant implementation- or application-defined behavior.
 
-[Schema Objects](#schema-object) validate data based on the [JSON Schema data model](https://datatracker.ietf.org/doc/html/draft-bhutton-json-schema-00#section-4.2.1), which only recognizes four primitive data types: strings (which are [only broadly interoperable as UTF-8](https://datatracker.ietf.org/doc/html/rfc7159#section-8.1)), numbers, booleans, and `null`.
+[Schema Objects](#schema-object) validate data based on the [JSON Schema data model](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.2.1), which only recognizes four primitive data types: strings (which are [only broadly interoperable as UTF-8](https://datatracker.ietf.org/doc/html/rfc7159#section-8.1)), numbers, booleans, and `null`.
 Notably, integers are not a distinct type from other numbers, with `type: "integer"` being a convenience defined mathematically, rather than based on the presence or absence of a decimal point in any string representation.
 
 The [Parameter Object](#parameter-object), [Header Object](#header-object), and [Encoding Object](#encoding-object) offer features to control how to arrange values from array or object types.
@@ -4201,7 +3978,7 @@ Certain field values translate to RFC6570 [operators](https://datatracker.ietf.o
 
 Multiple `style: "form"` parameters are equivalent to a single RFC6570 [variable list](https://www.rfc-editor.org/rfc/rfc6570#section-2.2) using the `?` prefix operator:
 
-```YAML
+```yaml
 parameters:
 - name: foo
   in: query
@@ -4246,7 +4023,7 @@ A parameter name that includes characters outside of the allowed RFC6570 variabl
 
 Let's say we want to use the following data in a form query string, where `formulas` is exploded, and `words` is not:
 
-```YAML
+```yaml
 formulas:
   a: x+y
   b: x/y
@@ -4261,7 +4038,7 @@ words:
 
 This array of Parameter Objects uses regular `style: "form"` expansion, fully supported by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570):
 
-```YAML
+```yaml
 parameters:
 - name: formulas
   in: query
@@ -4295,7 +4072,7 @@ when expanded with the data given earlier, we get:
 But now let's say that (for some reason), we really want that `/` in the `b` formula to show up as-is in the query string, and we want our words to be space-separated like in a written phrase.
 To do that, we'll add `allowReserved: true` to `formulas`, and change to `style: "spaceDelimited"` for `words`:
 
-```YAML
+```yaml
 parameters:
 - name: formulas
   in: query
@@ -4335,7 +4112,7 @@ See also [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for fur
 
 So here is our data structure that arranges the names and values to suit the template above, where values for `formulas` have `[]#&=+` pre-percent encoded (although only `+` appears in this example):
 
-```YAML
+```yaml
 a: x%2By
 b: x/y
 c: x^y
@@ -4356,7 +4133,7 @@ The `/` and the pre-percent-encoded `%2B` have been left alone, but the disallow
 
 Care must be taken when manually constructing templates to handle the values that RFC6570 [considers to be _undefined_](https://datatracker.ietf.org/doc/html/rfc6570#section-2.3) correctly:
 
-```YAML
+```yaml
 formulas: {}
 words:
 - hello
@@ -4373,7 +4150,7 @@ This means that the manually constructed URI Template and restructured data need
 
 Restructured data:
 
-```YAML
+```yaml
 words.0: hello
 words.1: world
 ```
@@ -4394,7 +4171,7 @@ Result:
 
 In this example, the heart emoji is not legal in URI Template names (or URIs):
 
-```YAML
+```yaml
 parameters:
 - name: ❤️
   in: query
@@ -4405,7 +4182,7 @@ parameters:
 We can't just pass `❤️: "love!"` to an RFC6570 implementation.
 Instead, we have to pre-percent-encode the name (which is a six-octet UTF-8 sequence) in both the data and the URI Template:
 
-```YAML
+```yaml
 "%E2%9D%A4%EF%B8%8F": love!
 ```
 
@@ -4423,6 +4200,8 @@ This will expand to the result:
 
 [RFC6570](https://www.rfc-editor.org/rfc/rfc6570)'s percent-encoding behavior is not always appropriate for `in: "header"` and `in: "cookie"` parameters.
 In many cases, it is more appropriate to use `content` with a media type such as `text/plain` and require the application to assemble the correct string.
+
+In some cases, setting `allowReserved: true` will be sufficient to avoid incorrect encoding, however many characters are still percent-encoded with this field enabled, so care must be taken to ensure no unexpected percent-encoding will take place.
 
 For both [RFC6265](https://www.rfc-editor.org/rfc/rfc6265) cookies and HTTP headers using the [RFC8941](https://www.rfc-editor.org/rfc/rfc8941) structured fields syntax, non-ASCII content is handled using base64 encoding (`contentEncoding: "base64"`).
 Note that the standard base64-encoding alphabet includes non-URL-safe characters that are percent-encoded by RFC6570 expansion; serializing values through both encodings is NOT RECOMMENDED.
@@ -4488,7 +4267,7 @@ This specification normatively cites the following relevant standards:
 Style-based serialization is used in the [Parameter Object](#parameter-object) when `schema` is present, and in the [Encoding Object](#encoding-object) when at least one of `style`, `explode`, or `allowReserved` is present.
 See [Appendix C](#appendix-c-using-rfc6570-based-serialization) for more details of RFC6570's two different approaches to percent-encoding, including an example involving `+`.
 
-Content-based serialization is defined by the [Media Type Object](#media-type-object), and used with the [Parameter Object](#parameter-object) when the `content` field is present, and with the [Encoding Object](#encoding-object) based on the `contentType` field when the fields `style`, `explode`, and `allowReserved` are absent.
+Content-based serialization is defined by the [Media Type Object](#media-type-object), and used with the [Parameter Object](#parameter-object) and [Header Object](#header-object) when the `content` field is present, and with the [Encoding Object](#encoding-object) based on the `contentType` field when the fields `style`, `explode`, and `allowReserved` are absent.
 Each part is encoded based on the media type (e.g. `text/plain` or `application/json`), and must then be percent-encoded for use in a `form-urlencoded` string.
 
 Note that content-based serialization for `form-data` does not expect or require percent-encoding in the data, only in per-part header values.
@@ -4536,7 +4315,7 @@ This appendix shows how to retrieve an HTTP-accessible multi-document OpenAPI De
 
 First, the [entry document](#openapi-description-structure) is where parsing begins. It defines the `MySecurity` security scheme to be JWT-based, and it defines a Path Item as a reference to a component in another document:
 
-```HTTP
+```http
 GET /api/description/openapi HTTP/1.1
 Host: www.example.com
 Accept: application/openapi+json
@@ -4559,7 +4338,7 @@ Accept: application/openapi+json
 }
 ```
 
-```HTTP
+```http
 GET /api/description/openapi HTTP/1.1
 Host: www.example.com
 Accept: application/openapi+yaml
@@ -4579,7 +4358,7 @@ paths:
 
 This entry document references another document, `other`, without using a file extension. This gives the client the flexibility to choose an acceptable format on a resource-by-resource basis, assuming both representations are available:
 
-```HTTP
+```http
 GET /api/description/other HTTP/1.1
 Host: www.example.com
 Accept: application/openapi+json
@@ -4605,7 +4384,7 @@ Accept: application/openapi+json
 }
 ```
 
-```HTTP
+```http
 GET /api/description/other HTTP/1.1
 Host: www.example.com
 Accept: application/openapi+yaml
@@ -4625,3 +4404,218 @@ components:
 ```
 
 In the `other` document, the referenced path item has a Security Requirement for a Security Scheme, `MySecurity`. The same Security Scheme exists in the original entry document. As outlined in [Resolving Implicit Connections](#resolving-implicit-connections), `MySecurity` is resolved with an [implementation-defined behavior](#undefined-and-implementation-defined-behavior). However, documented in that section, it is RECOMMENDED that tools resolve component names from the [entry document](#openapi-description-structure). As with all implementation-defined behavior, it is important to check tool documentation to determine which behavior is supported.
+
+## Appendix G: Examples of Base URI Determination and Reference Resolution
+
+This section shows each of the four possible sources of base URIs, followed by an example with a relative `$self` and `$id`.
+
+### Base URI Within Content
+
+A base URI within the resource's content (RFC3986 Section 5.1.1) is the highest-precedence source of a base URI.
+For OpenAPI Documents, this source is the OpenAPI Object's `$self` field, while for Schema Objects that contain a `$id`, or are a subschema of a Schema Object containing a `$id`, the source is the `$id` field:
+
+Assume the retrieval URI of the following document is `file://home/someone/src/api/openapi.yaml`:
+
+```YAML
+openapi: 3.2.0
+$self: https://example.com/api/openapi
+info:
+  title: Example API
+  version: 1.0
+paths:
+  /foo:
+    get:
+      requestBody:
+        $ref: "shared/foo#/components/requestBodies/Foo"
+```
+
+Assume the retrieval URI for the following document is `https://git.example.com/shared/blob/main/shared/foo.yaml`:
+
+```YAML
+openapi: 3.2.0
+$self: https://example.com/api/shared/foo
+info:
+  title: Shared components for all APIs
+  version: 1.0
+components:
+  requestBodies:
+    Foo:
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/foo
+  schemas:
+    Foo:
+      $id: https://example.com/api/schemas/foo
+      properties:
+        bar:
+          $ref: bar
+    Bar:
+      $id: https://example.com/api/schemas/bar
+      type: string
+```
+
+In this example, the retrieval URIs are irrelevant because both documents define `$self`.
+
+The relative `$ref` in the first document is resolved against `$self` to produce `https://example.com/api/shared/foo#/components/requestBodies/Foo`.
+The portion of that URI before the '#' matches the `$self` of the second document, so the reference target is resolved to `#/components/requestBodies/Foo` in that second document.
+
+In that document, the `$ref` in the Request Body Object is resolved using that document's `$self` as the base URI, producing `https://example.com/api/schemas/foo`.
+This matches the `$id` at `#/components/schemas/Foo/$id` so it points to that Schema Object.
+That Schema Object has a subschema with `$ref: bar`, which is resolved against the `$id` to produce `https://example.com/api/schemas/bar`, which matches the `$id` at `#/components/schemas/Bar/$id`.
+
+To guarantee interoperability, Schema Objects containing an `$id`, or that are under a schema containing an `$id`, MUST be referenced by the nearest such `$id` for the non-fragment part of the reference.
+As the JSON Schema specification notes, using a base URI other than the nearest `$id` and crossing that `$id` with a JSON Pointer fragment [is not interoperable](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-json-pointer-fragments-and-).
+
+Note also that it is impossible for the reference at `#/components/schemas/Foo/properties/bar/$ref` to reference the schema at `#/components/schemas/Bar` using _only_ a JSON Pointer fragment, as the JSON Pointer would be resolved relative to `https://example.com/api/schemas/foo`, not to the OpenAPI Document's base URI from `$self`.
+
+### Base URI From Encapsulating Entity
+
+If no base URI can be determined within the content, the next location to search is any encapsulating entity (RFC3986 Section 5.1.2).
+
+This is common for Schema Objects encapsulated within an OpenAPI Document.
+An example of an OpenAPI Document itself being encapsulated in another entity would be a `multipart/related` archive ([[?RFC2557]]), such as the following `multipart/related; boundary="boundary-example"; type="application/openapi+yaml"` document.
+Note that this is purely an example, and support for such multipart documents or any other format that could encapsulate an OpenAPI Document is not a requirement of this specification.
+
+RFC2557 was written to allow sending hyperlinked sets of documents as email attachments, in which case there would not be a retrieval URI for the multipart attachment (although the format could also be used in HTTP as well).
+
+```MULTIPART
+--boundary-example
+Content-Type: application/openapi+yaml
+Content-Location: https://example.com/api/openapi.yaml
+
+openapi: 3.2.0
+info:
+  title: Example API
+  version: 1.0
+  externalDocs:
+    url: docs.html
+components:
+  requestBodies:
+    Foo:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/api/schemas/Foo"
+  schemas:
+    Foo:
+      properties:
+        bar:
+          $ref: schemas/bar
+--boundary-example
+Content-Type: application/schema+json
+Content-Location: https://example.com/api/schemas/bar
+
+{
+  "type": "string"
+}
+--boundary-example
+Content-Type: text/html
+Content-Location: https://example.com/api/docs.html
+
+<html>
+  <head>
+    <title>API Documentation</title>
+  </head>
+  <body>
+    <p>Awesome documentation goes here</p>
+  </body>
+</html>
+--boundary-example
+```
+
+In this example, the URI for each part, which also serves as its base URI, comes from the part's `Content-Location` header as specified by RFC2557.
+Since the Schema Object at `#/components/schemas/Foo` does not contain an `$id`, the reference in its subschema uses the OpenAPI Document's base URI, which is taken from the `Content-Location` header of its part within the `multipart/related` format.
+The resulting reference to `https://example.com/schemas/bar` matches the `Content-Location` header of the second part, which according to RFC2557 allows the reference target to be located within the multipart archive.
+
+Similarly, the `url` field of the [External Documentation Object](#external-documentation-object) is resolved against the base URI from `Content-Location`, producing `https://example.com/api/docs.html` which matches the `Content-Location` of the third part.
+
+### Base URI From the Retrieval URI
+
+If no base URI is provided from either of the previous sources, the next source is the retrieval URI (RFC 3986 Section 5.1.3).
+
+Assume this document was retrieved from `https://example.com/api/openapis.yaml`:
+
+```YAML
+openapi: 3.2.0
+info:
+  title: Example API
+  version: 1.0
+components:
+  requestBodies:
+    Foo:
+      content:
+        application/json:
+          schema:
+            $ref: schemas/foo
+```
+
+Assume this document was retrieved from `https://example.com/api/schemas/foo`:
+
+```JSON
+{
+  "type": "object",
+  "properties": {
+    "bar": {
+      "type": "string"
+    }
+  }
+}
+```
+
+Resolving the `$ref: schemas/foo` against the retrieval URI of the OpenAPI Document produces `https://example.com/api/schemas/foo`, the retrieval URI of the JSON Schema document.
+
+### Application-Specific Default Base URI
+
+When constructing an OpenAPI Document in memory that does not have a `$self`, or an encapsulating entity, or a retrieval URI, applications can resolve internal (fragment-only) references by assuming a default base URI (RFC3986 Section 5.1.4).
+While this sort of internal resolution an be performed in practice without choosing a base URI, choosing one, such as a URN with a randomly generated UUID (e.g. `urn:uuid:f26cdaad-3193-4398-a838-4ecb7326c4c5`) avoids the need to implement it as a special case.
+
+### Resolving Relative `$self` and `$id`
+
+Let's re-consider the first example in this appendix, but with relative URI-references for `$self` and `$id`, and retrieval URIs that support that relative usage:
+
+
+Assume that the following is retrieved from `https://staging.example.com/api/openapi`:
+
+```YAML
+openapi: 3.2.0
+$self: /api/openapi
+info:
+  title: Example API
+  version: 1.0
+paths:
+  /foo:
+    get:
+      requestBody:
+        $ref: "shared/foo#/components/requestBodies/Foo"
+```
+
+Assume the retrieval URI for the following document is `https://staging.example.com/api/shared/foo`:
+
+```YAML
+openapi: 3.2.0
+$self: /api/shared/foo
+info:
+  title: Shared components for all APIs
+  version: 1.0
+components:
+  requestBodies:
+    Foo:
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/foo
+  schemas:
+    Foo:
+      $id: /api/schemas/foo
+      properties:
+        bar:
+          $ref: bar
+    Bar:
+      $id: /api/schemas/bar
+      type: string
+```
+
+In this example, all of the `$self` and `$id` values are relative URI-references consisting of an absolute path.
+This allows the retrieval URI to set the host (and scheme), in this case `https://staging.example.com`, resulting in the first document's `$self` being `https://staging.example.com/openapi`, and the second document's `$self` being `https://staging.example.com/api/shared/foo`, with `$id` values of `https://staging.example.com/api/schemas/foo` and `https://staging.example.com/api/schemas/bar`.
+Relative `$self` and `$id` values of this sort  allow the same set of documents to work when deployed to other hosts, e.g. `https://example.com` (production) or `https://localhost:8080` (local development).

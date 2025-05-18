@@ -48,6 +48,99 @@ hljs.registerLanguage('uri', function() {
       ],
     }
   });
+hljs.registerLanguage('multipart', function() {
+    return {
+      // This is a very limited approach that only
+      // detects boundaries and headers that start
+      // with "Content-"
+      contains: [
+          {
+              scope: "meta",
+              match: /^--.*$/,
+          },
+          {
+              scope: "literal",
+              begin: /^Content-/,
+              end: /$/,
+              contains: [
+                {
+                    scope: "attr",
+                    begin: " ",
+                    end: /$/,
+                },
+              ]
+          },
+      ],
+    }
+  });
+hljs.registerLanguage('eventstream', function() {
+    return {
+      contains: [
+          {
+              scope: "comment",
+              begin: /^:/,
+              end: /$/,
+          },
+          {
+              scope: "attr",
+              match: /^[^:]+/
+          },
+      ],
+    }
+  });
+hljs.registerLanguage('jsonseq', function() {
+    return {
+      keywords: ["true", "false", "null"],
+      contains: [
+          {
+              scope: "meta",
+              match: /0[xX]1[eE]/,
+          },
+          {
+              scope: "attr",
+              begin: /"(\\.|[^\\"\r\n])*"(?=\s*:)/,
+              relevance: 1.01
+          },
+          {
+              scope: "punctuation",
+              match: /[{}[\],:]/,
+              relevance: 0
+          },
+          {
+              scope: "literals",
+              beginKeywords: ["true", "false" , "null"].join(" "),
+          },
+          hljs.QUOTE_STRING_MODE,
+          hljs.C_NUMBER_MODE
+      ]
+    }
+  });
+hljs.registerLanguage('jsonl', function() {
+    return {
+      aliases: ["ndjson"],
+      keywords: ["true", "false", "null"],
+      contains: [
+          {
+              scope: 'attr',
+              begin: /"(\\.|[^\\"\r\n])*"(?=\s*:)/,
+              relevance: 1.01
+          },
+          {
+              scope: "punctuation",
+              match: /[{}[\],:]/,
+              relevance: 0
+          },
+          {
+              scope: "literals",
+              beginKeywords: ["true", "false" , "null"].join(" "),
+          },
+          hljs.QUOTE_STRING_MODE,
+          hljs.C_NUMBER_MODE
+      ]
+    }
+  });
+
+
 const cheerio = require('cheerio');
 
 let argv = require('yargs')
@@ -77,6 +170,7 @@ const md = require('markdown-it')({
 });
 
 function preface(title,options) {
+    const otherVersions = options._[1].split("\n").map(v => path.basename(v,'.md')).filter(v => v !== options.subtitle);
     const respec = {
         specStatus: "base",
         latestVersion: "https://spec.openapis.org/oas/latest.html",
@@ -96,6 +190,14 @@ function preface(title,options) {
             height: 48,
             url: "https://openapis.org/"}],
         otherLinks: [
+            {
+                key: "Other versions:",
+                data: otherVersions.map(v => {
+                    return {
+                        href: `https://spec.openapis.org/oas/v${v}.html`
+                    }
+                })
+            },
             {
                 key: "Participate",
                 data: [
@@ -123,34 +225,20 @@ function preface(title,options) {
         // }
     };
 
-    let preface = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${md.utils.escapeHtml(title)}</title>`;
+    let preface = '<!DOCTYPE html><html lang="en"><head>\n'
+    preface += fs.readFileSync(path.resolve(__dirname,'./analytics/google.html'),'utf8');
 
     // SEO
-    preface += '<meta name="description" content="The OpenAPI Specification (OAS) defines a standard, programming language-agnostic interface description for HTTP APIs.">';
+    preface += `<meta charset="UTF-8">\n<title>${md.utils.escapeHtml(title)}</title>`;
+    preface += '<meta name="description" content="The OpenAPI Specification (OAS) defines a standard, programming language-agnostic interface description for HTTP APIs.">\n';
 
     // ReSpec
+    preface += '<meta name="color-scheme" content="light dark">';
     preface += '<script src="../js/respec-w3c.js" class="remove"></script>';
-    preface += `<script class="remove">var respecConfig = ${JSON.stringify(respec)};</script>`;
-    try {
-        preface += fs.readFileSync('./analytics/google.html','utf8');
-    }
-    catch (ex) {}
-    preface += '</head><body>';
+    preface += `<script class="remove">var respecConfig = ${JSON.stringify(respec)};</script>\n`;
+    preface += '</head>\n<body>';
     preface += '<style>';
-    preface += '#respec-ui { visibility: hidden; }';
-    preface += '#title { color: #578000; } #subtitle { color: #578000; }';
-    preface += '.dt-published { color: #578000; } .dt-published::before { content: "Published "; }';
-    preface += 'h1,h2,h3,h4,h5,h6 { color: #578000; font-weight: normal; font-style: normal; }';
-    preface += 'a[href] { color: #45512c; }';
-    preface += 'body:not(.toc-inline) #toc h2 { color: #45512c; }';
-    preface += 'table { display: block; width: 100%; overflow: auto; }';
-    preface += 'table th { font-weight: 600; }';
-    preface += 'table th, table td { padding: 6px 13px; border: 1px solid #dfe2e5; }';
-    preface += 'table tr { background-color: #fff; border-top: 1px solid #c6cbd1; }';
-    preface += 'table tr:nth-child(2n) { background-color: #f6f8fa; }';
-    preface += 'pre { background-color: #f6f8fa !important; }';
-    preface += 'code { color: #c83500 } th code { color: inherit }';
-    preface += 'a.bibref { text-decoration: underline;}';
+    preface += fs.readFileSync(path.resolve(__dirname,'main.css'),'utf8').split(/\r?\n/).join(' ');
     preface += fs.readFileSync(path.resolve(__dirname,'gist.css'),'utf8').split(/\r?\n/).join(' ');
     preface += '</style>';
     preface += `<h1 id="title">${title.split('|')[0]}</h1>`;
