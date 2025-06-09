@@ -3312,66 +3312,122 @@ The `namespace` field is intended to match the syntax of [XML namespaces](https:
 Each of the following examples represent the value of the `properties` keyword in a [Schema Object](#schema-object) that is omitted for brevity.
 The JSON and YAML representations of the `properties` value are followed by an example XML representation produced for the single property shown.
 
-###### No XML Element
+###### No XML Object
 
-Basic string property:
+Basic string property without an XML Object, using `serializedValue` (the remaining examples will use `externalSerializedValue` so that the XML form can be shown with syntax highlighting):
 
 ```yaml
-animals:
-  type: string
-```
-
-```xml
-<animals>...</animals>
+application/xml:
+  schema:
+    type: object
+    xml:
+      name: document
+    properties:
+      animals:
+        type: string
+  examples:
+    pets:
+      dataValue:
+        animals: "dog, cat, hamster"
+      serializedValue: |
+        <document>
+          <animals>dog, cat, hamster</animals>
+        </document>
 ```
 
 Basic string array property ([`wrapped`](#xml-wrapped) is `false` by default):
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+application/xml:
+  schema:
+    type: object
+    xml:
+      name: document
+    properties:
+      animals:
+        type: array
+        items:
+          type: string
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<animals>...</animals>
-<animals>...</animals>
-<animals>...</animals>
+<document>
+  <animals>dog</animals>
+  <animals>cat</animals>
+  <animals>hamster</animals>
+</document>
 ```
 
 ###### XML Name Replacement
 
 ```yaml
-animals:
-  type: string
-  xml:
-    name: animal
+application/xml:
+  schema:
+    type: object
+    xml:
+      name: document
+    properties:
+      animals:
+        type: string
+        xml:
+          name: animal
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<animal>...</animal>
+<document>
+  <animal>dog</animal>
+  <animal>cat</animal>
+  <animal>hamster</animal>
+</document>
 ```
 
 ###### XML Attribute, Prefix and Namespace
 
-In this example, a full model definition is shown.
-
 ```yaml
-Person:
-  type: object
-  properties:
-    id:
-      type: integer
-      format: int32
-      xml:
-        attribute: true
-    name:
-      type: string
-      xml:
-        namespace: https://example.com/schema/sample
-        prefix: sample
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          xml:
+            attribute: true
+        name:
+          type: string
+          xml:
+            namespace: https://example.com/schema/sample
+            prefix: sample
+  requestBodies:
+    Person:
+      content:
+        application/xml:
+          schema:
+            $ref: "#/components/schemas/Person"
+          examples:
+            Person:
+              dataValue:
+                id: 123
+                name: example
+              externalSerializedValue: ./examples/Person.xml
 ```
+
+Where `./examples/Person.xml` would be:
 
 ```xml
 <Person id="123">
@@ -3384,113 +3440,209 @@ Person:
 Changing the element names:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+application/xml:
+  schema:
+    type: object
     xml:
-      name: animal
+      name: document
+    properties:
+      animals:
+        type: array
+        items:
+          type: string
+          xml:
+            name: animal
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<animal>value</animal>
-<animal>value</animal>
+<document>
+  <animal>dog</animal>
+  <animal>cat</animal>
+  <animal>hamster</animal>
+</document>
 ```
 
 The external `name` field has no effect on the XML:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+application/xml:
+  schema:
+    type: object
     xml:
-      name: animal
-  xml:
-    name: aliens
+      name: document
+    properties:
+      animals:
+        type: array
+        xml:
+          name: aliens
+        items:
+          type: string
+          xml:
+            name: animal
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<animal>value</animal>
-<animal>value</animal>
+<document>
+  <animal>dog</animal>
+  <animal>cat</animal>
+  <animal>hamster</animal>
+</document>
 ```
 
 Even when the array is wrapped, if a name is not explicitly defined, the same name will be used both internally and externally:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
-  xml:
-    wrapped: true
+application/xml:
+  schema:
+    type: object
+    xml:
+      name: document
+    properties:
+      animals:
+        type: array
+        xml:
+          wrapped: true
+        items:
+          type: string
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<animals>
-  <animals>value</animals>
-  <animals>value</animals>
-</animals>
+<document>
+  <animals>
+    <animals>dog</animals>
+    <animals>cat</animals>
+    <animals>hamster</animals>
+  </animals>
+</document>
 ```
 
 To overcome the naming problem in the example above, the following definition can be used:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+application/xml:
+  schema:
+    type: object
     xml:
-      name: animal
-  xml:
-    wrapped: true
+      name: document
+    properties:
+      animals:
+        type: array
+        xml:
+          wrapped: true
+        items:
+          type: string
+          xml:
+            name: animal
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<animals>
-  <animal>value</animal>
-  <animal>value</animal>
-</animals>
+<document>
+  <animals>
+    <animal>dog</animal>
+    <animal>cat</animal>
+    <animal>hamster</animal>
+  </animals>
+</document>
 ```
 
 Affecting both internal and external names:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
+application/xml:
+  schema:
+    type: object
     xml:
-      name: animal
-  xml:
-    name: aliens
-    wrapped: true
+      name: document
+    properties:
+      animals:
+        type: array
+        xml:
+          name: aliens
+          wrapped: true
+        items:
+          type: string
+          xml:
+            name: animal
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<aliens>
-  <animal>value</animal>
-  <animal>value</animal>
-</aliens>
+<document>
+  <aliens>
+    <animal>dog</animal>
+    <animal>cat</animal>
+    <animal>hamster</animal>
+  </aliens>
+</document>
 ```
 
 If we change the external element but not the internal ones:
 
 ```yaml
-animals:
-  type: array
-  items:
-    type: string
-  xml:
-    name: aliens
-    wrapped: true
+application/xml:
+  schema:
+    type: object
+    xml:
+      name: document
+    properties:
+      animals:
+        type: array
+        xml:
+          name: aliens
+          wrapped: true
+        items:
+          type: string
+  examples:
+    pets:
+      dataValue:
+        animals: [dog, cat, hamster]
+      externalSerializedValue: ./examples/pets.xml
 ```
 
+Where `./examples/pets.xml` would be:
+
 ```xml
-<aliens>
-  <aliens>value</aliens>
-  <aliens>value</aliens>
-</aliens>
+<document>
+  <aliens>
+    <aliens>dog</aliens>
+    <aliens>cat</aliens>
+    <aliens>hamster</aliens>
+  </aliens>
+</document>
 ```
 
 #### Security Scheme Object
