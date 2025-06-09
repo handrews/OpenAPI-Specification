@@ -2558,6 +2558,10 @@ X-Rate-Limit-Limit:
   description: The number of allowed requests in the current period
   schema:
     type: integer
+  examples:
+    OneHundred:
+      dataValue: 100
+      serializedValue: "X-Rate-Limit-Limit: 100"
 ```
 
 Requiring that a strong `ETag` header (with a value starting with `"` rather than `W/`) is present. Note the use of `content`, because using `schema` and `style` would require the `"` to be percent-encoded as `%22`:
