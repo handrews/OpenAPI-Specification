@@ -1710,8 +1710,13 @@ These fields MAY be used either with or without the RFC6570-style serialization 
 | ---- | :----: | ---- |
 | <a name="encoding-content-type"></a>contentType | `string` | The `Content-Type` for encoding a specific property. The value is a comma-separated list, each element of which is either a specific media type (e.g. `image/png`) or a wildcard media type (e.g. `image/*`). Default value depends on the property type as shown in the table below. |
 | <a name="encoding-headers"></a>headers | Map[`string`, [Header Object](#header-object) \| [Reference Object](#reference-object)] | A map allowing additional information to be provided as headers. `Content-Type` is described separately and SHALL be ignored in this section. This field SHALL be ignored if the media type is not a `multipart`. |
+| <a name="encoding-encoding"></a>encoding | Map[`string`, [Encoding Object](#encoding-object)] | Applies nested Encoding Objects in the same manner as the [Media Type Object](#media-type-object)'s `encoding` field. |
+| <a name="encoding-prefix-encoding"></a>prefixEncoding | [[Encoding Object](#encoding-object)] | Applies nested Encoding Objects in the same manner as the [Media Type Object](#media-type-object)'s `prefixEncoding` field. |
+| <a name="encoding-item-encoding"></a>itemEncoding | [Encoding Object](#encoding-object) | Applies nested Encoding Objects in the same manner as the [Media Type Object](#media-type-object)'s `itemEncoding` field. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
+
+####### Default `contentType` values
 
 The default values for `contentType` are as follows, where an _n/a_ in the `contentEncoding` column means that the presence or value of `contentEncoding` is irrelevant.
 This table is based on the value to which the Encoding Object is being applied as defined under [Encoding Usage and Restrictions](#encoding-usage-and-restrictions), where determining the type is done as described under [Encoding and `type`](#encoding-and-type).
@@ -1731,7 +1736,17 @@ Determining how to handle a `type` value of `null` depends on how `null` values 
 If `null` values are entirely omitted, then the `contentType` is irrelevant.
 See [Appendix B](#appendix-b-data-type-conversion) for a discussion of data type conversion options.
 
-It is not currently possible to model nested `multipart` media types.
+####### Nested Encoding
+
+Nested formats requiring encoding, most notably nested `multipart/mixed`, can be supported with this Object's `encoding`, `prefixEncoding`, and / or `itemEncoding` fields.
+Implementations MUST support one level of nesting, and MAY support additional levels.
+If supporting additional levels, any limits on nesting levels MUST be documented.
+
+Note that using nested encoding is straightforward when there is a single Schema Object (possibly found by following one or more `$ref`s) for the property or item where the nesting is to be applied, and implementations MUST support such scenarios.
+
+However, if multiple non-trivially-referencing Schema Objects apply to the property or item, e.g. through the use of `allOf`, determining nested property schemas can become very complex as each schema may define its own property or item subschemas that overlap with each other.
+Implementations MAY support additional complex scenarios, and MUST document what scenarios they support, and with what behavior.
+However, OADs that depend on such behavior are not interoperable.
 
 ###### Fixed Fields for RFC6570-style Serialization
 
