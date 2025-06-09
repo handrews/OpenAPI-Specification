@@ -1742,26 +1742,33 @@ requestBody:
             # complex types are stringified to support RFC 1866
             type: object
             properties: {}
+      examples:
+        CaliforniaWithZIPPlusFour:
+          summary: A U.S. address example
+          description: |
+            Note that JSON whitespace in the address is minimized
+            before encoding
+          dataValue: {
+            "id": "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+            "address": {
+              "streetAddress": "123 Example Dr.",
+              "city": "Somewhere",
+              "state": "CA",
+              "zip": "99999+1234"
+            }
+          }
+          externalSerializedValue: ./examples/urlencoded
 ```
 
-With this example, consider an `id` of `f81d4fae-7dec-11d0-a765-00a0c91e6bf6` and a US-style address (with ZIP+4) as follows:
-
-```json
-{
-  "streetAddress": "123 Example Dr.",
-  "city": "Somewhere",
-  "state": "CA",
-  "zip": "99999+1234"
-}
-```
-
-Assuming the most compact representation of the JSON value (with unnecessary whitespace removed), we would expect to see the following request body, where space characters have been replaced with `+` and `+`, `"`, `{`, and `}` have been percent-encoded to `%2B`, `%22`, `%7B`, and `%7D`, respectively:
+Where `./examples/urlencoded` would be:
 
 ```uri
 id=f81d4fae-7dec-11d0-a765-00a0c91e6bf6&address=%7B%22streetAddress%22:%22123+Example+Dr.%22,%22city%22:%22Somewhere%22,%22state%22:%22CA%22,%22zip%22:%2299999%2B1234%22%7D
 ```
 
-Note that the `id` keyword is treated as `text/plain` per the [Encoding Object](#encoding-object)'s default behavior, and is serialized as-is.
+Note that per the media type rules, spaces have been replaced with `+`, while `+`, `"`, `{`, and `}` have been percent-encoded to `%2B`, `%22`, `%7B`, and `%7D`, respectively.
+
+Note also that the `id` keyword is treated as `text/plain` per the [Encoding Object](#encoding-object)'s default behavior, and is serialized as-is.
 If it were treated as `application/json`, then the serialized value would be a JSON string including quotation marks, which would be percent-encoded as `%22`.
 
 Here is the `id` parameter (without `address`) serialized as `application/json` instead of `text/plain`, and then encoded per RFC1866:
@@ -1789,13 +1796,19 @@ requestBody:
             # image media type(s) in the Encoding Object.
             type: string
             contentEncoding: base64url
-  encoding:
-    icon:
-      contentType: image/png, image/jpeg
+    encoding:
+      icon:
+        contentType: image/png, image/jpeg
+    examples:
+      namedIcon:
+        summary: A small icon image with a plain text name
+        description: |
+          The input data for "name" is "example", and for "icon"
+          is a solid red 2x2-pixel PNG
+        externalSerializedValue: ./examples/namedIcon
 ```
 
-Given a name of `example` and a solid red 2x2-pixel PNG for `icon`, this
-would produce a request body of:
+Where `./examples/namedIcon` would be:
 
 ```uri
 name=example&icon=iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAABGdBTUEAALGPC_xhBQAAADhlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAAqACAAQAAAABAAAAAqADAAQAAAABAAAAAgAAAADO0J6QAAAAEElEQVQIHWP8zwACTGCSAQANHQEDqtPptQAAAABJRU5ErkJggg%3D%3D
@@ -1869,14 +1882,25 @@ requestBody:
           id:
             type: string
             format: uuid
+            examples:
+            - f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 
           # Encoding Object overrides the default `application/json` content type
           # for each item in the array with `application/xml; charset=utf-8`
           addresses:
             description: addresses in XML format
             type: array
+            xml:
+              wrapped: true
             items:
               $ref: '#/components/schemas/Address'
+              examples:
+              - {
+                  "streetAddress": "123 Example Dr.",
+                  "city": "Somewhere",
+                  "state": "CA",
+                  "zip": "99999+1234"
+                }
 
           # Encoding Object accepts only PNG or JPEG, and also describes
           # a custom header for just this part in the multipart format
@@ -1892,7 +1916,46 @@ requestBody:
               description: The number of allowed requests in the current period
               schema:
                 type: integer
+
+      examples:
+        multipart:
+          description: |
+            The input example data for the serialized value
+            is taken from the Schema Object `examples` fields
+            for the "id" and "addresses" field, and is a solid
+            red 2x2 pixel PNG for the "profileImage" field.
+          externalSerializedValue: ./examples/multipart
 ```
+
+As it is not possible to embed raw binary in JSON, JSON-compatible YAML, or Markdown, we cannot show the true contents of `./examples/multipart`.
+But using `[binary contents here]` as a placeholder, it would look something like:
+
+```multipart
+--boundary-example
+Content-Type: text/plain
+Content-Disposition: form-data; name=id
+
+f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+--boundary-example
+Content-Type: application/xml; charset=utf-8
+Content-Disposition: form-data; name=address
+
+<addresses>
+  <address>
+    <streetAddress>123 Example Dr.</streetAddress>
+    <city>Somewhere</city>
+    <state>CA</state>
+    <zip>99999+1234</zip>
+  </address>
+</addresses>
+--boundary-example
+Content-Type: image/png
+Content-Disposition: form-data; name=profileImage
+
+[binary contents here]
+--boundary-example
+```
+
 
 ###### Example: Multipart Form with Multiple Files
 
