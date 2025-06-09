@@ -1449,16 +1449,30 @@ components:
   examples:
     LogJSONSeq:
       summary: Log entries in application/json-seq
+      dataValue: [
+        {
+          "timestamp": "1985-04-12T23:20:50.52Z",
+          "level": 1,
+          "message": "Hi!"
+        },
+        {
+          "timestamp": "1985-04-12T23:20:51.37Z",
+          "level": 1,
+          "message": "Bye!"
+        }
+      ]
       # JSON Text Sequences require an unprintable character
       # that cannot be escaped in a YAML string, and therefore
       # must be placed in an external document shown below
-      externalValue: examples/log.json-seq
+      externalSerializedValue: examples/log.json-seq
     LogJSONPerLine:
       summary: Log entries in application/jsonl or application/x-ndjson
       description: JSONL and NDJSON are identical for this example
-      # Note that the value must be written as a string with newlines,
-      # as JSONL and NDJSON are not valid YAML
-      value: |
+      dataValue: [
+        {"timestamp": "1985-04-12T23:20:50.52Z", "level": 1, "message": "Hi!"},
+        {"timestamp": "1985-04-12T23:20:51.37Z", "level": 1, "message": "Bye!"}
+      ]
+      serializedValue: |
         {"timestamp": "1985-04-12T23:20:50.52Z", "level": 1, "message": "Hi!"}
         {"timestamp": "1985-04-12T23:20:51.37Z", "level": 1, "message": "Bye!"}
   responses:
@@ -1570,9 +1584,21 @@ content:
               properties:
                 foo:
                   type: integer
+    examples:
+      threeEvents:
+        summary: Three events in a short stream
+        description: |
+          These events show how multi-line data, numbers-as-text,
+          and embedded JSON are handled.
+        dataValue: [
+          {"event": "addString", "data": "This data is formatted\nacross two lines", "retry": 5},
+          {"event": "addInt64", "data": "12345678"},
+          {"event": "addJSON", "data": "{\"foo\": 42}"}
+        ]
+        externalSerializedValue: ./examples/three-event-stream
 ```
 
-The following `text/event-stream` document is an example of a valid request body for the above example:
+The `./examples/three-event-stream` document is shown separately here to allow syntax highlighting for readability, but could have been included as a YAML block string literal.  Note that the comment and unknown field do not appear in the scorresponding `dataValue`, but are an example of how a serialized form may include elements that are ignored when parsed:
 
 ```eventstream
 event: addString
@@ -1581,20 +1607,12 @@ data: across two lines
 retry: 5
 
 event: addInt64
-data: 1234.5678
+data: 12345678
 unknownField: this is ignored
 
 : This is a comment
 event: addJSON
 data: {"foo": 42}
-```
-
-To more clearly see how this stream is handled, the following is the equivalent JSON Lines document, which shows how the numeric and JSON data are handled as strings, and how unknown fields and comments are ignored and not passed to schema validation:
-
-```jsonl
-{"event": "addString", "data": "This data is formatted\nacross two lines", "retry": 5}
-{"event": "addInt64", "data": "1234.5678"}
-{"event": "addJSON", "data": "{\"foo\": 42}"}
 ```
 
 ##### Considerations for File Uploads
