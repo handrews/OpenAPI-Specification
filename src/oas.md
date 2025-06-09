@@ -1241,24 +1241,24 @@ content:
     examples:
       user:
         summary: User example
-        externalValue: https://foo.bar/examples/user-example.json
+        externalDataValue: https://foo.bar/examples/user-example.json
   application/xml:
     schema:
       $ref: '#/components/schemas/User'
     examples:
       user:
         summary: User example in XML
-        externalValue: https://foo.bar/examples/user-example.xml
+        externalSerializedValue: https://foo.bar/examples/user-example.xml
   text/plain:
     examples:
       user:
         summary: User example in plain text
-        externalValue: https://foo.bar/examples/user-example.txt
+        externalSerializedValue: https://foo.bar/examples/user-example.txt
   '*/*':
     examples:
       user:
         summary: User example in other format
-        externalValue: https://foo.bar/examples/user-example.whatever
+        externalSerializedValue: https://foo.bar/examples/user-example.whatever
 ```
 
 #### Media Type Object
