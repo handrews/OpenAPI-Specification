@@ -11,11 +11,15 @@ references:
     anchor: encoding-usage-and-restrictions
   - section: Encoding multipart Media Types
     anchor: encoding-multipart-media-types
+  - section: "Example: Ordered, Unnamed Multipart"
+    anchro: example-ordered-unnamed-multipart
+  - section: "Example: Streaming Multipart"
+    anchor: example-streaming-multipart
 layout: default
 ---
 
 {% capture summary %}
-All `multipart` use the Encoding Object to control how the JSON-like structure defined by the Schema Object maps to each part.  Multipart media types that do not use named parts cannot be handled with this technique, although it may be possible to use `Content-Disposition: form` with a name parameter with such media types, but as no specification recommends this, support is unlikely to be dependable.
+The `multipart/mixed` media type is an ordered list of parts without names.  It and all other unnamed `multipart` subtypes use a Media Type Object with the `itemEncoding` and/or `prefixEncoding` fields that correlate Encoding Objects with the items in the data array.
 {% endcapture %}
 
 {% include media-type-entry.md summary=summary remarks=remarks %}  
