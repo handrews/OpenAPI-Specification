@@ -11,6 +11,12 @@ references:
     anchor: encoding-usage-and-restrictions
   - section: Encoding multipart Media Types
     anchor: encoding-multipart-media-types
+  - section: "Example: Basic Multipart Form"
+    anchor: example-basic-multipart-form
+  - section: "Example: Multipart Form with Encoding Objects"
+    anchor: example-multipart-form-with-encoding-objects
+  - section: "Exampe: Multipart Form with Multiple Files"
+    anchor: example-multipart-form-with-multiple-files
 layout: default
 ---
 
