@@ -3,17 +3,19 @@ owner: handrews
 issue:
 description: Multipart Form Data
 media_type: multipart/form-data
-specification:
-    name: RFC7578
+specifications:
+  - name: RFC7578
     url: https://www.rfc-editor.org/rfc/rfc7578.html
-reference:
-    section: Encoding multipart Media Types
+references:
+  - section: Encoding Usage and Restrictions
+    anchor: encoding-usage-and-restrictions
+  - section: Encoding multipart Media Types
     anchor: encoding-multipart-media-types
 layout: default
 ---
 
 {% capture summary %}
-Multipart forms use the Encoding Object to control how the JSON-like structure defined by the Schema Object maps to each part.  Multipart media types that do not use named parts cannot be handled with this technique, although it may be possible to use `Content-Disposition: form` with a name parameter with such media types, but as no specification recommends this, support is unlikely to be dependable.
+Multipart forms, which consist of parts named after the form field names, use the Encoding Objects under the Media Type Objects `encoding` field to control how the JSON-like structure defined by the Schema Object maps to each part.  As with the `application/x-www-form-urlencoded`, the names in the ordered name-value pairs need not be unique, although the ordering is not necessarily well-defined.  In accordance with RFC7578, multiple file upload fields are expected to be handled by creating a part for each file and using the same field / part name for each of those parts.
 {% endcapture %}
 
 {% include media-type-entry.md summary=summary remarks=remarks %}  

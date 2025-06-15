@@ -2,13 +2,17 @@
 owner: handrews
 issue:
 description: JSON Lines
-specification:
-    name: JSONL
+specifications:
+  - name: JSONL
     url: https://jsonlines.org/
 media_type: application/jsonl
 media_type_unregistered: true
-reference:
-    section: Sequential JSON
+references:
+  - section: Sequential Media Types
+    anchor: sequential-media-types
+  - section: Streaming Sequential Media Types
+    anchor: streaming-sequential-media-types
+  - section: Sequential JSON
     anchor: sequential-json
 versions: "3.2+"
 layout: default

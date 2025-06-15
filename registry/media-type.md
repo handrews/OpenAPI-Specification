@@ -9,9 +9,14 @@ parent: Registry
 
 This registry defines how to use the Schema Object, Media Type Object, and in some cases other Objects to model media types other than `application/json` or media types using a `+json` suffix.
 
+## Data and Media Types
+
+In the OpenAPI Specification (OAS), in-memory data is structured for use with Schema Objects.
+Media Type Objects, sometimes with help from Encoding Objects and / or XML Objects, indicate how to convert between that in-memory data structure and the relevant media type.
+
 ## Data Modeling vs Mapping
 
-JSON Schema operates on an in-memory [data model](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-instance-data-model) based on the [JSON RFC](https://www.rfc-editor.org/rfc/rfc8259.html#section-3), which is different from the set of types used by JSON Schema's `type` keyword.
+JSON Schema operates on an in-memory [data model](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-instance-data-model) based on the [JSON RFC](https://www.rfc-editor.org/rfc/rfc8259.html#section-3), which consists of objcts, arrays, strings, numbers, booleans, and `null`.  This is different from the set of types used by JSON Schema's `type` keyword, which includes `integer` as a convenience equivalent to `{"type": "number", "multipleOf": 1}`.
 
 JSON Schema's data model description includes guidance on how to _map_ JSON documents into the data model, such as noting that whitespace and different lexical representations of numbers (such as `1` vs `1.0`) are **not** significant within the data model.
 

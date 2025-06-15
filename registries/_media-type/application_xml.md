@@ -3,11 +3,11 @@ owner: handrews
 issue:
 description: XML
 media_type: application/xml
-specification:
-    name: RFC7303
+specifications:
+  - name: RFC7303
     url: https://www.rfc-editor.org/rfc/rfc7303.html
-reference:
-    section: XML Object
+references:
+  - section: XML Object
     anchor: xml-object
 layout: default
 ---
