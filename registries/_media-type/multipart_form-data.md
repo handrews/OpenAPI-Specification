@@ -17,6 +17,10 @@ references:
     anchor: example-multipart-form-with-encoding-objects
   - section: "Exampe: Multipart Form with Multiple Files"
     anchor: example-multipart-form-with-multiple-files
+  - section: "Appendix C: Using RFC6570-Based Serialization"
+    anchor: appendix-c-using-rfc6570-based-serialization
+  - section: "Appendix E: Percent-Encoding and Form Media Types"
+    anchor: appendix-e-percent-encoding-and-form-media-types
 layout: default
 ---
 
