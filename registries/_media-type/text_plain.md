@@ -3,11 +3,11 @@ owner: handrews
 issue:
 description: Plain Text
 media_type: text/plain
-specification:
-    name: RFC2046
+specifications:
+  - name: RFC2046
     url: https://www.rfc-editor.org/rfc/rfc2046.html
-reference:
-    section: Encoding Object
+references:
+  - section: Encoding Object
     anchor: encoding-object
 layout: default
 ---

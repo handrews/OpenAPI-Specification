@@ -2,9 +2,23 @@
 
 ## {{ page.description }}
 
-**[Media Type](https://spec.openapis.org/oas/latest.html#media-types):** `{{ page.media_type }}` {% if value.unregistered %}_unregistered_ {% endif %} ([{{ page.specification.name }}]({{ page.specification.url }}))
+**[Media Type](https://spec.openapis.org/oas/latest.html#media-types):** `{{ page.media_type }}` {% if value.unregistered %}_unregistered_ {% endif %}
 
-**OAS Reference:** [{{ page.reference.section }}](https://spec.openapis.org/oas/latest.html#{{ page.reference.anchor }})
+{% if page.specifications %}
+**Specifications:**
+{% for spec in page.specifications %}
+* [{{ spec.name }}]({{ spec.url }})
+{% endfor %}
+{% endif %}
+
+{% if page.references %}
+**OAS References:**
+{% for ref in page.references %}
+* [{{ ref.section }}](https://spec.openapis.org/oas/latest.html#{{ ref.anchor }})
+{% endfor %}
+{% endif %}
+
+## Summary
 
 {{ include.summary }}
 

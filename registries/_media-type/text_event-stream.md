@@ -2,14 +2,14 @@
 owner: handrews
 issue:
 description: SSE Events
-specification:
-    name: WHATWG HTML
+specifications:
+  - name: WHATWG HTML
     url: https://html.spec.whatwg.org/multipage/iana.html#text/event-stream
 media_type: text/event-stream
 media_type_unregistered: true
-reference:
-    section: Server-Sent Event Streams
-    anchor: server-sent-event-streams
+references:
+  - section: Special Considerations for text/event-stream Content
+    anchor: special-considerations-for-text-event-stream-content
 versions: "3.2+"
 layout: default
 ---

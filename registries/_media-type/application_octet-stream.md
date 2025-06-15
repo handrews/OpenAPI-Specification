@@ -3,12 +3,14 @@ owner: handrews
 issue:
 description: Binary or Unknown
 media_type: application/octet-stream
-specification:
-    name: RFC2046 §4.5.1
+specifications:
+  - name: RFC2046 §4.5.1
     url: https://www.rfc-editor.org/rfc/rfc2046.html#section-4.5.1
-reference:
-    section: Working with Binary Data
+references:
+  - section: Working with Binary Data
     anchor: working-with-binary-data
+  - section: Binary Streams
+    anchor: binary-streams
 layout: default
 ---
 

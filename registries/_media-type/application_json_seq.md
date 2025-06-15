@@ -2,12 +2,16 @@
 owner: handrews
 issue:
 description: JSON Text Sequences
-specification:
-    name: RFC7464
+specifications:
+  - name: RFC7464
     url: https://www.rfc-editor.org/rfc/rfc7464.html
 media_type: application/json_seq
-reference:
-    section: Sequential JSON
+references:
+  - section: Sequential Media Types
+    anchor: sequential-media-types
+  - section: Streaming Sequential Media Types
+    anchor: streaming-sequential-media-types
+  - section: Sequential JSON
     anchor: sequential-json
 versions: "3.2+"
 layout: default
