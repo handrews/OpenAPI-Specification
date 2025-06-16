@@ -307,12 +307,15 @@ Note that the encoding indicated by `contentEncoding`, which inflates the size o
 
 Using a `contentEncoding` of `base64url` ensures that URL encoding (as required in the query string and in message bodies of type `application/x-www-form-urlencoded`) does not need to further encode any part of the already-encoded binary data.
 
-The `contentMediaType` keyword is redundant if the media type is already set:
+While `contentMediaType` is the JSON Schema keyword for describing a media type, the primary OpenAPI Specificaton mechanisms for describing media types are:
 
-* as the key for a [MediaType Object](#media-type-object)
-* in the `contentType` field of an [Encoding Object](#encoding-object)
+* the parent key of a [MediaType Object](#media-type-object)
+* the `contentType` field of an [Encoding Object](#encoding-object)
 
-If the [Schema Object](#schema-object) will be processed by a non-OAS-aware JSON Schema implementation, it may be useful to include `contentMediaType` even if it is redundant. However, if `contentMediaType` contradicts a relevant Media Type Object or Encoding Object, then `contentMediaType` SHALL be ignored.
+If the [Schema Object](#schema-object) will be processed by a non-OAS-aware JSON Schema implementation, it may be useful to include `contentMediaType` even if it is redundant.
+The `contentMediaType` keyword can be used to narrow the media type, e.g. by using `contentMediaType: "image/png"` when the media type is otherwise defined as `image/*`, or by setting any `contentMediaType` if the other media type is `*/*`.
+Note, however, that except when explicitly required to examine the kewyord by this specification (see [Deferring `contentType` to the Schema Object](#deferring-content-type-to-the-schema-object) under the [Encoding Object](#encoding-object)), tools MAY make assumptions solely based on the Media Type Object's key or the Encoding Object's `contentType` field.
+In all cases, if the `contentMediaType` contradicts, rather than matches or narrows, the other media type, then `contentMediaType` SHALL be ignored.
 
 See [Complete vs Streaming Content](#complete-vs-streaming-content) for guidance on streaming binary payloads.
 
@@ -1771,10 +1774,39 @@ Note that there are significant restrictions on what headers can be used with `m
 Note also that `Content-Transfer-Encoding` is deprecated for `multipart/form-data` ([RFC7578](https://www.rfc-editor.org/rfc/rfc7578.html#section-4.7)) where binary data is supported, as it is in HTTP.
 
 Using `contentEncoding` for a multipart field is equivalent to specifying an [Encoding Object](#encoding-object) with a `headers` field containing `Content-Transfer-Encoding` with a schema that requires the value used in `contentEncoding`.
-+If `contentEncoding` is used for a multipart field that has an Encoding Object with a `headers` field containing `Content-Transfer-Encoding` with a schema that disallows the value from `contentEncoding`, the result is undefined for serialization and parsing.
+If `contentEncoding` is used for a multipart field that has an Encoding Object with a `headers` field containing `Content-Transfer-Encoding` with a schema that disallows the value from `contentEncoding`, the result is undefined for serialization and parsing.
 
-Note that as stated in [Working with Binary Data](#working-with-binary-data), if the Encoding Object's `contentType`, whether set explicitly or implicitly through its default value rules, disagrees with the `contentMediaType` in a Schema Object, the `contentMediaType` SHALL be ignored.
-Because of this, and because the Encoding Object's `contentType` defaulting rules do not take the Schema Object's`contentMediaType` into account, the use of `contentMediaType` with an Encoding Object is NOT RECOMMENDED.
+###### Deferring `contentType` to the Schema Object
+
+The media type of each part is primarily determined by the default or explicit value of `contentType`.
+If the value of `contentType` uses a wildcard for either the subtype or for both type and subtype, then implementations MUST check for a `contentMediaType` keyword in the relevant Schema Object(s), and if the media type that it specifies is valid within that wildcarded `contetType`, MUST use the media type from `contentMediaType`.
+
+As the primary use case for deferring the media type to `contentMediaType` is to allow for flexibility, implementations MUST check for the `anyOf` (or analogous `oneOf`) pattern, where each branch specifies `contentMediaType`, to determine the set of possible media types, as shown in this description of an [[?RFC2557]] web archive allowing an arbitrary number of HTML, CSS, JavaScript, and/or image parts:
+
+```yaml
+multipart/related:
+  schema:
+    items:
+      anyOf:
+      - type: string
+        contentMediaType: text/html
+      - type: string
+        contentMediaType: text/css
+      - type: string
+        contentMediaType: text/javascript
+      - contentMediaType: image/*
+  itemEncoding:
+    contentType: */*
+    headers:
+      ContentType:
+        $ref: '#/components/headers/requiredContentType'
+```
+
+The rules and limitations for finding such an `anyOf` or `oneOf` are the same as when searching for `type` to determine the default `contentType` value.
+Implementations MAY support more complex schema arrangements
+
+The search for a `contentMediaType` keyword MUST follow the same rules and limitations as searching for the `type` Schema Object keyword to determine the default value for `contentType`.
+However, if the value of `contentMediaType` disagrees with the Encoding Object's `contentType`, whether set explicitly or implicitly through its default value rules, the `contentMediaType` SHALL be ignored.
 
 See [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for a detailed examination of percent-encoding concerns for form media types.
 
@@ -1868,6 +1900,15 @@ requestBody:
 ```
 
 As seen in the [Encoding Object's `contentType` field documentation](#encoding-content-type), the empty schema for `items` indicates a media type of `application/octet-stream`.
+
+###### Example: Deferring the Media Type to the Schema Object
+
+This example describes an [[?RFC2557]] web page archive, and restricts parts to HTML, CSS, JavaScript, and images.  While the first part MUST be HTML, the remaining parts may appear in any order and there may be any number of parts of each type:
+
+There are several important points to consider with this example:
+
+* The `prefixEncoding` field MUST be used to set the first part's media type, or else the default (`text/plain`) will cause the conflicting `text/html` of the `contentMediaType` keyword to be ignored.
+* The `itemEncoding` field MUST set `contentType` to `*/*` so that the media types of the remaining parts are controlled by the Schema Object and its `anyOf` logic.
 
 #### Responses Object
 
