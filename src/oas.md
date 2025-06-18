@@ -316,6 +316,8 @@ If the [Schema Object](#schema-object) will be processed by a non-OAS-aware JSON
 
 See [Complete vs Streaming Content](#complete-vs-streaming-content) for guidance on streaming binary payloads.
 
+##### Schema Evaluation and Binary Data
+
 ##### Migrating binary descriptions from OAS 3.0
 
 The following table shows how to migrate from OAS 3.0 binary data descriptions, continuing to use `image/png` as the example binary media type:
@@ -2610,6 +2612,8 @@ This allows correctly requiring the field on a GET and still using the same repr
 Even when read-only fields are not required, stripping them is burdensome for clients, particularly when the JSON data is complex or deeply nested.
 
 Note that the behavior of `readOnly` in particular differs from that specified by version 3.0 of this specification.
+
+##### Working Without an Instance
 
 ##### Data Modeling Techniques
 
