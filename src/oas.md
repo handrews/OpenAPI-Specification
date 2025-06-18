@@ -2615,6 +2615,62 @@ Note that the behavior of `readOnly` in particular differs from that specified b
 
 ##### Working Without an Instance
 
+JSON Schema is designed to work with an instance, and relies on the instance to resolve ambiguous runtime constructs such as `anyOf` and ensure that valid cyclic references eventually terminate by running out of instance to evaluate.
+
+The OpenAPI Specification, however, supports behaviors that depend on understanding schemas without instances, such as generating code or web forms that will work with any valid instance and ideally _not_ work with any invalid instance.
+
+Certain behaviors depend on analyzing Schema Objects, such as how the [Encoding Object's](#encoding-object) `contentType` field depends on the `type` specified by the relevant schema.
+This requires implementations to examine schema objects for relevant keywords and values, which can be greatly complicated when many references, conditional keywords, and/or logical operator keywords are used.
+
+In all cases, if an instance _is_ avaliable and proves to be valid against the relevant Schema Object, and the necessary information (such as type) can be determined directly from the instance value, implementations MUST support using the instance information.
+
+* When searching for a relevant Schema Object, implementations MUST follow all static references (`$ref`) and `allOf` subschemas, as these Schema Objects are guaranteed to be applied to the same part of the instance.
+* Implementations MAY attempt to analyze subschemas of other keywords that act on the current instance location (e.g. `anyOf`, `oneOf`, `not`, `if`, `then`, `else`, `dependentSchemas`, `$dynamicRef`) and MUST document what they support.
+* When de
+
+
+* Determining how to handle ambiguous serialization
+* Determining `type` to set behavior
+* Determining applicable `format` or `content*` values
+
+When working with in-memory data at runtime, if an implementation cannot locate an appropriate `type` keyword but the data is valid according to all relevant Schema Objects, then the runtime type of the data MUST be used to determine the behavior.
+
+When parsing a data format using an Encoding Object, implementations MUST support using a single-valued `type` keyword that is either in the corresponding Schema Object, or reachable from that Schema Object by following a chain of `$ref` and/or `allOf` keywords.
+Note that if `allOf` is used to combine single-valued `type` keywords with conflicting type values, schema validation will always fail, so such conflicts need not be detected in advance as long as validation is applied to the parsed result.
+Note also that while the `type` value `"integer"` can be applied with `type: "number"`, the encoding behavior is the same for JSON numbers whether they meet JSON Schema's additional `type: "integer"` constraint or not, so these types do not conflict.
+
+For example, the relevant type of the `"foo"` property is `"number"`, found by following the `$ref` to the `"Thing"` schema, then the `$ref` under the `"foo"` property schema to the `"Foo"` schema, then the `$ref` under the first branch of the `allOf` to the `"Bar"` schema, which defines a `type` keyword with the single value `"number"`, a primitive type:
+
+```yaml
+components:
+  schemas:
+    Thing:
+      type: object
+      properties:
+        foo:
+          $ref: "#/components/Schemas/Foo"
+    Foo:
+      allOf:
+      - $ref: "#/components/Schemas/Bar"
+      - $ref: "#/components/Schemas/Baz"
+    Bar:
+      type: number
+    Baz:
+      minimum: 0
+  requestBodies:
+    Thing:
+      schema:
+        $ref: "#/components/Schemas/Thing"
+      encoding:
+        foo:
+          # The default `contentType` is `text/plain`
+```
+
+Implementations MAY attempt to handle more complex schema arrangements, in which case they MUST document what is handled and with what behavior.
+If they do, then `type` keywords that contain multiple values (e.g. `type: ["number", "null"]`) SHOULD be handled by attempting to parse according to each type in the order provided.
+However OAD authors are advised that depending on handling scenarios other than `$ref`/`allOf`-reachable single-valued `type` keywords is not interoperable.
+
+###### Encoding By Name
 ##### Data Modeling Techniques
 
 ###### Composition and Inheritance (Polymorphism)
