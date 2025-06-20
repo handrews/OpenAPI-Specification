@@ -2617,6 +2617,32 @@ Note that the behavior of `readOnly` in particular differs from that specified b
 
 JSON Schema is designed to work with an instance, and relies on the instance to resolve ambiguous runtime constructs such as `anyOf` and ensure that valid cyclic references eventually terminate by running out of instance to evaluate.
 
+Certain OpenAPI Specification use cases, however, require analyzing schemas without an instance to determine behavior, or to determine how to convert non-JSON instances into the JSON Schema data model.  Specifically:
+
+* The `type`, `format`, and/or `content*` keywords are sometimes used to determine how to interpret media types where all values are essentially strings.
+    * When such values are handled with an [Encoding Object](#encoding-object), the type also determines the default value of the `contentType` field.
+* The [Media Type Object's](#media-type-object) encoding-related fields require correlating Encoding Objects with Schema Objects in various ways.
+
+Each of these use cases requires locating certain keywords and/or their subschemas.
+While examining a single Schema Object for a keyword, a set of `properties` subschemas, or other constructs is straightforward, it can become verfy complex when schemas are re-used with `$ref` and composed with keywords such as `allOf` or `anyOf`.
+
+Implementations are not expected to handle every possible schema layout.
+However, given a starting point schema (often the immediate value of the most relevant `schema` field, or a particular `property`, `prefixItems`, or `items`  subschema), implementations MUST examine:
+
+* The starting point schema
+* Any schema reachable only through static references (`$ref`) or `allOf`
+
+These schema objects are unambiguous and statically deterministic in that they will always apply to the same part of the instance as the starting point schema.
+In contrast the suchemas of keywords such as `anyOf`, `oneOf`, `not`, `if`, `then`, `else`, or `dependentSchemas` may or may not be applied, and the target of `$dyanmicRef` may change, all depending on the value of the instance.
+Implementations MAY try to analyze these other keywords, and MUST document any such support, but OAD authors are warned that such usage is not guaranteed to be interoperable.
+
+Additionally, when detecting `type`, if a multi-valued `type` is found (e.g. `type: ["number", "null"]`), each type MUST be tried in order.
+
+# TODO: `oneOf` in order?
+
+* Any schema ref
+When Schema Objects are composed using references and keywords such as `allOf`, `anyOf`, `oneOf`, `not`, `if`, `then`, `else`, or `dependentSchemas`, locating the necessary pieces can become
+
 The OpenAPI Specification, however, supports behaviors that depend on understanding schemas without instances, such as generating code or web forms that will work with any valid instance and ideally _not_ work with any invalid instance.
 
 Certain behaviors depend on analyzing Schema Objects, such as how the [Encoding Object's](#encoding-object) `contentType` field depends on the `type` specified by the relevant schema.
