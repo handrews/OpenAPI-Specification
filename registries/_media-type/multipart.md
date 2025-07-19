@@ -25,4 +25,4 @@ The only `multipart` subtype requiring substantially different handling is `mult
 
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

@@ -16,4 +16,4 @@ layout: default
 Plain text is modeled as a single string.  Note that unlike JSON strings, the contents of the string representing the plain text are not quoted when serializing to a document.  While a Schema Object of `{type: string, const: foo}` for JSON validates the JSON value `"foo"`, for plain text it validates `foo`, without quotes.
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

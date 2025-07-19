@@ -18,4 +18,4 @@ layout: default
 Event streams build on the sequential media type support used by sequential JSON media types by further defining a mapping of the individual event format into the Schema Object's data model.
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

@@ -30,4 +30,4 @@ URL-Encoded forms use the Encoding Object to control how the JSON-like structure
 The history of this media type is very complex and interwoven with that of the HTML specification, with three different sgroups claiming ownership of the specification, sometimes simultaneously.  To add to the confusion, different iterations of the specification reference different iterations of the URI specification, which themselves define slightly different rules for percent-encoding.  While in most cases the differences are irrelevant, they are covered in detail in [Appendex E](appendix-e-percent-encoding-and-form-media-types).
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

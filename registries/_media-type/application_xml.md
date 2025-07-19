@@ -24,4 +24,4 @@ Note that as of OAS v3.2, the XML Object uses the `nodeType` field to determine 
 In OAS v3.1 and earlier, only elements, their implicit primitive-type text nodes, and attributes were supported, with the now-deprecated `attribute` and `wrapped` flags as controls.
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

@@ -20,4 +20,4 @@ layout: default
 The `multipart/byteranges` media type is generally handled like `multipart/mixed`, but is more likely to be used in a streaming capacity, requiring the use of the Media Type Object's `itemSchema` and `itemEncoding` fields.
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

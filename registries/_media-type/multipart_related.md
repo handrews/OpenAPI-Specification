@@ -22,4 +22,4 @@ layout: default
 The `multipart/related` media type is generally handled like `multipart/mixed`, but note that RFC2557 establishes a convention of using a per-part `Content-Location` header to allow resolving web links among the parts.
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

@@ -22,4 +22,4 @@ layout: default
 The `multipart/mixed` media type is an ordered list of parts without names.  It and all other unnamed `multipart` subtypes use a Media Type Object with the `itemEncoding` and/or `prefixEncoding` fields that correlate Encoding Objects with the items in the data array.
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}

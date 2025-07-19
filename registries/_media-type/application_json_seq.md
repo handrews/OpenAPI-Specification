@@ -21,4 +21,4 @@ layout: default
 JSON Text Sequences uses the same approach as all sequential JSON media types.
 {% endcapture %}
 
-{% include media-type-entry.md summary=summary remarks=remarks %}  
+{% include media-type-entry.md summary=summary remarks=remarks %}
