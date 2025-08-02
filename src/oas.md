@@ -4546,7 +4546,81 @@ For multiple values, `style: "form"` is always incorrect as name=value pairs in 
 
 _**NOTE:** In this section, the `application/x-www-form-urlencoded` and `multipart/form-data` media types are abbreviated as `form-urlencoded` and `form-data`, respectively, for readability._
 
-Percent-encoding is used in URIs and media types that derive their syntax from URIs.
+
+When producing `application/x-www-form-urlencoded` (`form-urlencoded`) content, including via [Parameter Objects](#parameter-object) with `in: "query"`, the resulting string MUST decode successfully in accordance with RFC1866.
+Specifically, the characters `&`, `=`, and `+` MUST be percent-encoded in parameter names and values, and a non-percent-encoded `+` MUST be interpreted as an escaped space character.
+Note that `%20` is also a valid escaped space character for RFC1866-compliant decoding; it is just not the escape that RFC1866 mandates for _encoding_ `form-urlencoded` content.
+
+When producing `form-urlencoded` content with RFC6570-based rules, as occurs with the Parameter Object's `schema` field and with [Encoding Objects](#encoding-object) that use at least one of the `style`, `explode`, or `allowReserved` fields, if `allowReserved` is `false`, the results will comply with the previous paragraph.
+If `allowReserved` is `true`, implementations MUST assume that the appropriate percent-encoding of reserved characters has already occurred.
+
+When manually performing percent-encoding for `form-urlencoded` content, as is done with Parameter Objects using the `content` field, or Encoding Objects using `contentType` (either explicitly or implicitly through its default value), implementations MUST 
+
+Determining which set of characters need to be percent-encoded in a given portion of a URI is potentially very complex, depending on which specification(s) are used as the basis for the rules, which component of the URI is under consideration, and which additional specifications such as those for `application/x-www-form-urlencoded` or URI Templates are also being used.
+
+The OpenAPI Specification primarily relies on RFC3986, the current IETF standard for URIs, as well as RFC6570, which is fully compatible with RFC3986, for URI Templates and the OAS's own extensions to such templates.
+However, the OAS cites RFC1866 (HTML 2.0) for `form-urlencoded`, which cites RFC1738, one of several predecessors to RFC3986, for its percent-encoding rules.
+The current specification for `form-urlencoded` is [[?WHATWG-URL]], which also serves as an alternative URL specification in the context web browsers and related software ecosystems.
+
+Parameter Objects (with `in: query`) and Encoding Objects (in Media Type Objects under an `application/x-www-form-urlencoded` key) can both produce `form-urlencoded` content, and can both do so using the `style`/`explode`/`allowReserved` fields that rely on RFC6570 behavior.
+
+However, RFC6570 form expansion and RFC1866 `form-urlencoded` have different rules regarding which characters have reserved meanings (`&=,` for RFC6570 with `,` separating multiple valies; `&=+` for RFC1866 with `+` serving as an alternate escape for the space character), and depend on different URI specifications (RFC3986 and RFC1738, respectively) which themselves have different percent-encoding rules (most notabley, RFC1738 requires percent-encoding `~` while RFC3986 does not, but several other characters are also treated differently).
+
+
+
+To make matters more complicated, 
+* `application/x-www-form-urlencoded` content is governed by RFC1866, which references RFC1738
+* URI Template-like content (Parameter Objects with `in: query` and `schema` and Encoding Objects with any of `style`, `explode`, or `allowReserved`) are governed by RFC6570
+* In all other cases, URI percent-encoding is governed by RFC3986 plus any scheme-specific rules (e.g. RFC9110 for `http` and `https`, although neither define special rules)
+
+RFC6570 is fully compatible with RFC3986, and makes use of several reserved characters as delimiters: `style: form` uses `&` and `=` in the same way as RFC1866, and additionallyuses `,` to separate multiple values when `explode: false`
+
+| style | explode | reserved |
+| ----- | ------- | -------- |
+| `form` | `false` | `&=,` |
+| `form` | `true` | `&=` |
+| `simple` | n/a | `,` |
+| `matrix` | n/a | `;` |
+
+
+For Parameter and Header Objects, the presence of `schema` indicates RFC6570-based usage, while the presence of `content` indicates the need for manual percent-encoding.
+For `form-urlencoded` with the Encoding Object, the presence of any of `style`, `explode`, or `allowReserved` indicates RFC6470-based usage, and their absence indicates the need for manual percent-encoding.
+
+When producing `form-urlencoded` content, including via Parameter Objects with `in: query`, the serialized value MUST be able to be correctly decoded accoding to both
+For Parameter Objects with `in: path`:
+* When using `sty
+URI percent-encoding is used in URIs (including URLs) and media types that derive their syntax from URIs.
+Percent-encoding requirements are a complex topic as different versions of different specifications, sometimes controlled by different standards bodies, have defined different rules that at times contradict each other.
+
+* [[RFC3986]] is the primary URI specification used by the OAS.
+* The [Parameter Object](#parameter-object), [Header Object](#header-object), and [Encoding Object](#encoding-object) `style`, `explode`, and `allowReserved` fields are based on [[RFC6570]], which is based on RFC3986.
+* Percent-encoding rules for `application/x-www-form-urlencoded` [Media Type Objects](#media-type-object) and [Encoding Objects](#encoding-objects), as well as for URI query strings built from Parameter Objects with `in: query`, have a complex history, with this specification citing [[RFC1866]] (HTML 2.0) as its normative reference.
+
+Additionally the current specification for `form-urlencoded` is [[WHATWG-URL]], which also defines URL syntax in a web browser environment; APIs requiring interoperability with web browsers need to carefully examine the differences between WHATWG-URL and the RFCs.
+
+Notably, when producing a `form-urlencoded` document or query string using the `style`, `explode`, and/or `allowReserved` fields in the Encoding Object, or in Parameter Objects with `in: query`, this specification's language requires compliance with both RFC1866 and RFC6570, which is not always possible.
+
+
+
+
+This specification requires compliance with [[RFC1866]] (HTML 2.0) for `form-urlencoded`
+* [[RFC6570]] builds on RFC3986 for URI templating
+* [[RFC1738]] is an obsolete predecessor of RFC3986 that may need to be consulted for historical compatibility
+* [[WHATWG-URL]] is the specification for URLs in web browsers, and may need to be consulted for compatibility with browser ecosystems; it is also the current specification for `form-urlencoded`
+* [[RFC1866]] is an obsolete predecessor specification for `form-urlencoded` that references RFC1738, but paraphrases it in a way that implies more percent-encoding than RFC1738 actually requires
+
+
+
+A few rules are common to all versions of all specifications:
+
+* ASCII alphanumerics never need to be percent-encoded
+* Control characters (Unicode `0x00` through `0x19`) and characters above `~` (Unicode `0x7F` and higher) always need to be percent-encoded
+* The space character (Unicode `0x20`) always needs to be escaped, which can always be done with percent-encoding, but can _also_ be done by replacing it with a `+` character in `form-urlencoded` query strings and documents
+
+All other characters (ASCII non-alphanumerics > `0x20` and < `0x7F`) 
+
+
+
 This process is concerned with three sets of characters, the names of which vary among specifications but are defined as follows for the purposes of this section:
 
 * _unreserved_ characters do not need to be percent-encoded; while it is safe to percent-encode them, doing so produces a URI that is [not normalized](https://datatracker.ietf.org/doc/html/rfc3986#section-6.2.2.2)
@@ -4584,7 +4658,7 @@ This specification normatively cites the following relevant standards:
 | ---- | ---- | ---- | ---- | ---- |
 | [RFC3986](https://www.rfc-editor.org/rfc/rfc3986) | 01/2005 | URI/URL syntax | [[RFC3986]] | obsoletes [[RFC1738]], [[RFC2396]] |
 | [RFC6570](https://www.rfc-editor.org/rfc/rfc6570) | 03/2012 | style-based serialization | [[RFC3986]] | does not use `+` for <code>form&#8209;urlencoded</code> |
-| [RFC1866](https://datatracker.ietf.org/doc/html/rfc1866#section-8.2.1) | 11/1995 | content-based serialization | [[RFC1738]] | obsoleted by [[HTML401]] [Section 17.13.4.1](https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1), [[URL]] [Section 5](https://url.spec.whatwg.org/#urlencoded-serializing) |
+| [RFC1866](https://datatracker.ietf.org/doc/html/rfc1866#section-8.2.1) | 11/1995 | content-based serialization | [[RFC1738]] | obsoleted by [[HTML401]] [Section 17.13.4.1](https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1), [[WHATWG-URL]] [Section 5](https://url.spec.whatwg.org/#urlencoded-serializing) |
 
 Style-based serialization is used in the [Parameter Object](#parameter-object) when `schema` is present, and in the [Encoding Object](#encoding-object) when at least one of `style`, `explode`, or `allowReserved` is present.
 See [Appendix C](#appendix-c-using-rfc6570-based-serialization) for more details of RFC6570's two different approaches to percent-encoding, including an example involving `+`.
