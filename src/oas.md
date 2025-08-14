@@ -1148,14 +1148,14 @@ For simpler scenarios, a [`schema`](#parameter-schema) and [`style`](#parameter-
 
 These fields MUST NOT be used with `in: "querystring"`.
 
-When serializing `in: "header"` parameters with `schema`, URI percent-encoding MUST NOT be applied; if using an RFC6570 implementation that automatically applies it, it MUST be removed before use.
-Implementations MUST pass header values through unchanged rather than attempting to automatically quote header values, as the quoting rules vary too widely among different headers; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for guidance on quoting and escaping.
+When serializing `in: "header"` or `in: "cookie", style: "cookie"` parameters with `schema`, URI percent-encoding MUST NOT be applied; if using an RFC6570 implementation that automatically applies it, it MUST be removed before use.
+In these cases, implementations MUST pass values through unchanged rather than attempting to quote or escape them, as the quoting rules for headers and escaping conventions for cookies vary too widely to be performed automatically; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for guidance on quoting and escaping.
 
-Serializing with `schema` is NOT RECOMMENDED for `in: "cookie"` parameters; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details.
+When describing `in: "cookie"` parameters with `schema`, the `style` field SHOULD be set to `"cookie"` as well because the default `style` of `"form"` is rarely suitable; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="parameter-style"></a>style | `string` | Describes how the parameter value will be serialized depending on the type of the parameter value. Default values (based on value of `in`): for `"query"` - `"form"`; for `"path"` - `"simple"`; for `"header"` - `"simple"`; for `"cookie"` - `"form"` (for compatibility reasons; note that `style: "cookie"` SHOULD be used with `in: "cookie"`). |
+| <a name="parameter-style"></a>style | `string` | Describes how the parameter value will be serialized depending on the type of the parameter value. Default values (based on value of `in`): for `"query"` - `"form"`; for `"path"` - `"simple"`; for `"header"` - `"simple"`; for `"cookie"` - `"form"` (for compatibility reasons; note that `style: "cookie"` SHOULD be used with `in: "cookie"`; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details). |
 | <a name="parameter-explode"></a>explode | `boolean` | When this is true, parameter values of type `array` or `object` generate separate parameters for each value of the array or key-value pair of the map. For other types of parameters, or when [`style`](#parameter-style) is `"deepObject"`, this field has no effect. When `style` is `"form"` or `"cookie"`, the default value is `true`. For all other styles, the default value is `false`. |
 | <a name="parameter-allow-reserved"></a>allowReserved | `boolean` | When this is true, parameter values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). Applications are still responsible for percent-encoding reserved characters that are not allowed by the rules of the `in` destination or media type, or are [not allowed in the path by this specification](#path-templating); see [URL Percent-Encoding](#url-percent-encoding) for details. The default value is `false`. |
 | <a name="parameter-schema"></a>schema | [Schema Object](#schema-object) | The schema defining the type used for the parameter. |
@@ -1165,7 +1165,6 @@ See also [Appendix C: Using RFC6570-Based Serialization](#appendix-c-using-rfc65
 ###### Fixed Fields for use with `content`
 
 For more complex scenarios, the [`content`](#parameter-content) field can define the media type and schema of the parameter, as well as give examples of its use.
-Using `content` with a `text/plain` media type is RECOMMENDED for `in: "cookie"` parameters where the `schema` strategy's percent-encoding and/or delimiter rules are not appropriate.
 
 For use with `in: "querystring"` and `application/x-www-form-urlencoded`, see [Encoding the `x-www-form-urlencoded` Media Type](#encoding-the-x-www-form-urlencoded-media-type).
 
@@ -1298,6 +1297,54 @@ examples:
   Tokens:
     dataValue: [12345678, 90099]
     serializedValue: "12345678,90099"
+```
+
+
+A cookie parameter with an exploded object (the default for `style: "cookie"`):
+
+```yaml
+name: cookie
+in: cookie
+style: cookie
+schema:
+  type: object
+  properties:
+    greeting:
+      type: string
+    code:
+      type: integer
+      minimum: 0
+examples:
+  Object:
+    description: |
+        Note that the comma (,) has been pre-percent-encoded
+        to "%2C" in the data, as it is forbidden in
+        cookie values.  However, the exclamation point (!)
+        is legal in cookies, so it can be left unencoded.
+    dataValue: {
+      "greeting": "Hello%2C world!",
+      "code": 42
+    }
+    serializedValue: "greeting=Hello%2C world!; code: 42"
+```
+
+A cookie parameter relying on the percent-encodingn behavior of the default `style: "form"`:
+
+```yaml
+name: greeting
+in: cookie
+schema:
+  type: string
+examples:
+  Greeting:
+    description: |
+      Note that in this approach, RFC6570's percent-encoding
+      process applies, so unsafe characters are not
+      pre-percent-encoded.  This results in all non-URL-safe
+      characters, rather than just the one non-cookie-safe
+      character, getting percent-encoded.
+    dataValue: "Hello, world!"
+    serializedValue: "greeting=Hello%2C%20world%21"
 ```
 
 A path parameter of a string value:
