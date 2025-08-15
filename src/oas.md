@@ -5178,22 +5178,14 @@ For this reason, any data being passed to a header by way of a [Parameter](#para
 
 ### Percent-Encoding and Cookies
 
-_**Note:** OAS v3.0.4 and v3.1.1 applied the advice in this section to avoid RFC6570-style serialization to both headers and cookies.
-However, further research has indicated that percent-encoding was never intended to apply to headers, so this section has been corrected to apply only to cookies._
-
 [RFC6570](https://www.rfc-editor.org/rfc/rfc6570)'s percent-encoding behavior is not always appropriate for `in: "cookie"` parameters.
-In many cases, it is more appropriate to use `content` with a media type such as `text/plain` and require the application to assemble the correct string.
-Other media types, such as `application/linkset` (see [Modeling Link Headers](#modeling-link-headers)), are directly suitable for use as `content` for specific headers.
+While percent-encoding seems more common as an escaping mechanism than the base64 encoding (`contentEncoding`: "base64") recommended by [[RFC6265]], [section 5.6 of draft-ietf-httpbis-rfc6265bis-20](https://www.ietf.org/archive/id/draft-ietf-httpbis-rfc6265bis-20.html#section-5.6), the proposed update to that RFC, notes that cookies in the `Set-Cookie` that appear to be percent-encoded MUST NOT be decoded when stored by the client, which would mean that they are already encoded when retrieved for use in the `Cookie` header.
+The behavior of `style: "cookie"` assumes this usage, and _does not_ apply percent-encoding.
 
-In some cases, setting `allowReserved: true` will be sufficient to avoid incorrect encoding, however many characters are still percent-encoded with this field enabled, so care must be taken to ensure no unexpected percent-encoding will take place.
-
-[RFC6265](https://www.rfc-editor.org/rfc/rfc6265) recommends (but does not strictly required) base64 encoding (`contentEncoding: "base64"`) if "arbitrary data" will be stored in a cookie.
-Note that the standard base64-encoding alphabet includes non-URL-safe characters that are percent-encoded by RFC6570 expansion; serializing values through both encodings is NOT RECOMMENDED.
-While `contentEncoding` also supports the `base64url` encoding, which is URL-safe, the header and cookie RFCs do not mention this encoding.
-
+If automatic percent-encoding of a single value is desired, `style: "form"` with a primitive value or with the non-default `explode` value of `false` provides this behavior.
+However, note that the default `explode: true` with non-primitive values uses the wrong delimiter (`&` instead of `;` followed by a single space) to set multiple cookie values.
 Using `style: "form"` with `in: "cookie"` via an RFC6570 implementation requires stripping the `?` prefix, as when producing `application/x-www-form-urlencoded` message bodies.
-
-For multiple values, `style: "form"` is always incorrect, even if no characters are subject to percent-encoding, as name=value pairs in cookies are delimited by a semicolon followed by a space character rather than `&`.
+To allow the full use of `style: "form"` with `in: "cookie"`, the `allowReserved` field is now supported for cookies.
 
 ## Appendix E: Percent-Encoding and Form Media Types
 
