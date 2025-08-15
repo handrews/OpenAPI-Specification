@@ -1157,7 +1157,7 @@ When describing `in: "cookie"` parameters with `schema`, the `style` field SHOUL
 | ---- | :----: | ---- |
 | <a name="parameter-style"></a>style | `string` | Describes how the parameter value will be serialized depending on the type of the parameter value. Default values (based on value of `in`): for `"query"` - `"form"`; for `"path"` - `"simple"`; for `"header"` - `"simple"`; for `"cookie"` - `"form"` (for compatibility reasons; note that `style: "cookie"` SHOULD be used with `in: "cookie"`; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details). |
 | <a name="parameter-explode"></a>explode | `boolean` | When this is true, parameter values of type `array` or `object` generate separate parameters for each value of the array or key-value pair of the map. For other types of parameters, or when [`style`](#parameter-style) is `"deepObject"`, this field has no effect. When `style` is `"form"` or `"cookie"`, the default value is `true`. For all other styles, the default value is `false`. |
-| <a name="parameter-allow-reserved"></a>allowReserved | `boolean` | When this is true, parameter values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). Applications are still responsible for percent-encoding reserved characters that are not allowed by the rules of the `in` destination or media type, or are [not allowed in the path by this specification](#path-templating); see [URL Percent-Encoding](#url-percent-encoding) for details. The default value is `false`. |
+| <a name="parameter-allow-reserved"></a>allowReserved | `boolean` | When this is true, parameter values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). Applications are still responsible for percent-encoding reserved characters that are not allowed by the rules of the `in` destination or media type, or are [not allowed in the path by this specification](#path-templating); see [URL Percent-Encoding](#url-percent-encoding) for details. The default value is `false`. This field SHALL be ignored for `in` and `style` values that do not automatically percent-encode. |
 | <a name="parameter-schema"></a>schema | [Schema Object](#schema-object) | The schema defining the type used for the parameter. |
 
 See also [Appendix C: Using RFC6570-Based Serialization](#appendix-c-using-rfc6570-based-serialization) for additional guidance.
@@ -2986,7 +2986,6 @@ Implementations MUST pass header values through unchanged rather than attempting
 | ---- | :----: | ---- |
 | <a name="header-style"></a>style | `string` | Describes how the header value will be serialized. The default (and only legal value for headers) is `"simple"`. |
 | <a name="header-explode"></a>explode | `boolean` | When this is true, header values of type `array` or `object` generate a single header whose value is a comma-separated list of the array items or key-value pairs of the map, see [Style Examples](#style-examples). For other data types this field has no effect. The default value is `false`. |
-| <a name="header-allow-reserved"></a>allowReserved | `boolean` | When this is true, header values are serialized using reserved expansion, as defined by [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570#section-3.2.3), which allows [RFC3986's reserved character set](https://datatracker.ietf.org/doc/html/rfc3986#section-2.2), as well as percent-encoded triples, to pass through unchanged, while still percent-encoding all other disallowed characters (including `%` outside of percent-encoded triples). See [Appendix D: Serializing Headers and Cookies](#appendix-d-serializing-headers-and-cookies) for guidance on header encoding and escaping. The default value is `false`. |
 | <a name="header-schema"></a>schema | [Schema Object](#schema-object) | The schema defining the type used for the header. |
 
 See also [Appendix C: Using RFC6570-Based Serialization](#appendix-c-using-rfc6570-based-serialization) for additional guidance.
@@ -3089,9 +3088,7 @@ The following example shows two different ways to describe `Set-Cookie` headers 
 ```yaml
 components:
   headers:
-    SetCookieWithExpires:
-      # Spaces within the Expires values prevent the use of `schema` and
-      # `style` as they would be percent-encoded, even with `allowReserved`.
+    SetCookieWithContent:
       content:
         text/plain:
           schema:
@@ -3109,40 +3106,33 @@ components:
           serializedValue: |
             lang=en-US; Expires=Wed, 09 Jun 2021 10:18:14 GMT
             foo=bar; Expires=Wed, 09 Jun 2021 10:18:14 GMT
-    SetCookieWithNoSpaces:
+    SetCookieWithSchemaAnd Style:
       schema:
         type: object
         required:
         - lang
         - foo
         additionalProperties:
-          type: string
-          pattern: "^[^[:space:]]*$"
+          # Require an Expires parameter
+          pattern: "; *Expires="
       style: simple
       explode: true
       examples:
         SetCookies:
           dataValue: {
-            "lang": "en-US",
-            "foo": "bar"
+            "lang": "en-US; Expires=Wed, 09 Jun 2021 10:18:14 GMT"
+            "foo": "bar; Expires=Wed, 09 Jun 2021 10:18:14 GMT"
           }
           serializedValue: |
-            lang=en-US
-            foo=bar
+            lang=en-US; Expires=Wed, 09 Jun 2021 10:18:14 GMT
+            foo=bar; Expires=Wed, 09 Jun 2021 10:18:14 GMT
 ```
 
-In an HTTP message, the serialized example with Expires would look like:
+In an HTTP message, the serialized example would look like:
 
 ```http
 Set-Cookie: lang=en-US; Expires=Wed, 09 Jun 2021 10:18:14 GM
 Set-Cookie: foo=bar; Expires=Wed, 09 Jun 2021 10:18:14 GMT
-```
-
-and the example without Expires would look like:
-
-```http
-Set-Cookie: lang=en-US
-Set-Cookie: foo=bar
 ```
 
 ##### Header Object Example
