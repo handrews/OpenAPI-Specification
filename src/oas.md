@@ -1151,8 +1151,6 @@ These fields MUST NOT be used with `in: "querystring"`.
 When serializing `in: "header"` or `in: "cookie", style: "cookie"` parameters with `schema`, URI percent-encoding MUST NOT be applied; if using an RFC6570 implementation that automatically applies it, it MUST be removed before use.
 In these cases, implementations MUST pass values through unchanged rather than attempting to quote or escape them, as the quoting rules for headers and escaping conventions for cookies vary too widely to be performed automatically; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for guidance on quoting and escaping.
 
-When describing `in: "cookie"` parameters with `schema`, the `style` field SHOULD be set to `"cookie"` as well because the default `style` of `"form"` is rarely suitable; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details.
-
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="parameter-style"></a>style | `string` | Describes how the parameter value will be serialized depending on the type of the parameter value. Default values (based on value of `in`): for `"query"` - `"form"`; for `"path"` - `"simple"`; for `"header"` - `"simple"`; for `"cookie"` - `"form"` (for compatibility reasons; note that `style: "cookie"` SHOULD be used with `in: "cookie"`; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for details). |
@@ -1211,7 +1209,11 @@ Reserved characters MUST NOT be percent-encoded when being used for reserved pur
 The result of inserting non-percent-encoded delimiters into data using manual percent-encoding, including via RFC6570's reserved expansion rules, is undefined and will likely prevent implementations from parsing the results back into the correct data structures.
 In some cases, such as inserting `/` into path parameter values, doing so is [explicitly forbidden](#path-templating) by this specification.
 
-See [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for a thorough discussion of percent-encoding options, compatibility, and OAS-defined delimiters that are not allowed by RFC3986, and [Appendix C](#appendix-c-using-rfc6570-based-serialization) for guidance on using RFC6570 implementations.
+See also:
+
+* [Appendix C](#appendix-c-using-rfc6570-based-serialization) for guidance on using or simulating RFC6570 implementations.
+* [Appendix D](#appendix-d-serializing-headers-and-cookies) for guidance on percent-encoding and cookies, as well as other escaping approaches for headers and cookies
+* [Appendix E](#appendix-e-percent-encoding-and-form-media-types) for a thorough discussion of percent-encoding options, compatibility, and handling OAS-defined delimiters that are not allowed by RFC3986
 
 ##### Serialization and Examples
 
