@@ -1148,7 +1148,7 @@ For simpler scenarios, a [`schema`](#parameter-schema) and [`style`](#parameter-
 
 These fields MUST NOT be used with `in: "querystring"`.
 
-When serializing `in: "header"` or `in: "cookie", style: "cookie"` parameters with `schema`, URI percent-encoding MUST NOT be applied; if using an RFC6570 implementation that automatically applies it, it MUST be removed before use.
+When serializing `in: "header"` or `in: "cookie", style: "cookie"` parameters with `schema`, URI percent-encoding MUST NOT be applied, and when parsing any apparent percent-encoding MUST NOT be decoded; if using an RFC6570 implementation that automatically performs these steps, the steps MUST be reversed before use.
 In these cases, implementations MUST pass values through unchanged rather than attempting to quote or escape them, as the quoting rules for headers and escaping conventions for cookies vary too widely to be performed automatically; see [Appendix D](#appendix-d-serializing-headers-and-cookies) for guidance on quoting and escaping.
 
 | Field Name | Type | Description |
