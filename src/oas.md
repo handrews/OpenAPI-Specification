@@ -113,54 +113,26 @@ Implementations MAY choose to support referencing by other URIs such as the retr
 
 #### OpenAPI Description Structure
 
+An OpenAPI Description (OAD) formally describes the surface of an API and its semantics. It is composed of an [entry document](#openapi-description-structure), which must be an OpenAPI Document, and any/all of its referenced documents. An OAD uses and conforms to the OpenAPI Specification, and MUST contain at least one [paths](#paths-object) field, [components](#oas-components) field, or [webhooks](#oas-webhooks) field.
+
+An OpenAPI Document is a single JSON or YAML document that conforms to the OpenAPI Specification. An OpenAPI Document compatible with OAS 3.\*.\* contains a required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
+
 An OpenAPI Description (OAD) MAY be made up of a single JSON or YAML document or be divided into multiple, connected parts at the discretion of the author. In the latter case, [Reference Object](#reference-object), [Path Item Object](#path-item-object) and [Schema Object](#schema-object) `$ref` fields, as well as the [Link Object](#link-object) `operationRef` field, and the URI form of the [Discriminator Object](#discriminator-object) `mapping` field, are used to identify the referenced elements.
 
 In a multi-document OAD, the document containing the OpenAPI Object where parsing begins is known as that OAD's **entry document**.
 
 It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or `openapi.yaml`.
 
-##### OpenAPI Description
-
-An OpenAPI Description (OAD) formally describes the surface of an API and its semantics. It is composed of an [entry document](#openapi-description-structure), which must be an OpenAPI Document, and any/all of its referenced documents. An OAD uses and conforms to the OpenAPI Specification, and MUST contain at least one [paths](#paths-object) field, [components](#oas-components) field, or [webhooks](#oas-webhooks) field.
-
-##### OpenAPI Document
-
-An OpenAPI Document is a single JSON or YAML document that conforms to the OpenAPI Specification. An OpenAPI Document compatible with OAS 3.\*.\* contains a required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
-
 ##### Parsing Documents
 
 In order to properly handle [Schema Objects](#schema-object), OAS 3.1 inherits the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
 
 This includes a requirement to parse complete documents before deeming a Schema Object reference to be unresolvable, in order to detect keywords that might provide the reference target or impact the determination of the appropriate base URI.
-
-Implementations MAY support complete-document parsing in any of the following ways:
-
-* Detecting OpenAPI or JSON Schema documents using media types
-* Detecting OpenAPI documents through the root `openapi` field
-* Detecting JSON Schema documents through detecting keywords or otherwise successfully parsing the document in accordance with the JSON Schema specification
-* Detecting a document containing a referenceable Object at its root based on the expected type of the reference
-* Allowing users to configure the type of documents that might be loaded due to a reference to a non-root Object
-
-Implementations that parse referenced fragments of OpenAPI content without regard for the content of the rest of the containing document will miss keywords that change the meaning and behavior of the reference target.
-In particular, failing to take into account keywords that change the base URI introduces security risks by causing references to resolve to unintended URIs, with unpredictable results.
-While some implementations support this sort of parsing due to the requirements of past versions of this specification, in version 3.1, the result of parsing fragments in isolation is _undefined_ and likely to contradict the requirements of this specification.
-
-While it is possible to structure certain OpenAPI Descriptions to ensure that they will behave correctly when references are parsed as isolated fragments, depending on this is NOT RECOMMENDED.
-This specification does not explicitly enumerate the conditions under which such behavior is safe and provides no guarantee for continued safety in any future versions of the OAS.
+See [Appendix H: Parsing and Resolution Guidance](#appendix-h-parsing-and-resolution-guidance) for more detailed implementation options and a discussion of the consequences of parsing fragmentary content in isolation.
 
 A special case of parsing fragments of OAS content would be if such fragments are embedded in another format, referred to as an _embedding format_ with respect to the OAS.
 Note that the OAS itself is an embedding format with respect to JSON Schema, which is embedded as Schema Objects.
 It is the responsibility of an embedding format to define how to parse embedded content, and OAS implementations that do not document support for an embedding format cannot be expected to parse embedded OAS content correctly.
-
-##### Structural Interoperability
-
-JSON or YAML objects within an OAD are interpreted as specific Objects (such as [Operation Objects](#operation-object), [Response Objects](#response-object), [Reference Objects](#reference-object), etc.) based on their context. Depending on how references are arranged, a given JSON or YAML object can be interpreted in multiple different contexts:
-
-* As the root object of the [entry document](#openapi-description-structure), which is always interpreted as an OpenAPI Object
-* As the Object type implied by its parent Object within the document
-* As a reference target, with the Object type matching the reference source's context
-
-If the same JSON/YAML object is parsed multiple times and the respective contexts require it to be parsed as _different_ Object types, the resulting behavior is _implementation defined_, and MAY be treated as an error if detected. An example would be referencing an empty Schema Object under `#/components/schemas` where a Path Item Object is expected, as an empty object is valid for both types. For maximum interoperability, it is RECOMMENDED that OpenAPI Description authors avoid such scenarios.
 
 ##### Relative References in API Description URIs
 
@@ -196,7 +168,11 @@ Relative references in CommonMark hyperlinks are resolved in their rendered cont
 Several features of this specification require resolution of non-URI-based connections to some other part of the OpenAPI Description (OAD).
 
 These connections are unambiguously resolved in single-document OADs, but the resolution process in multi-document OADs is _implementation-defined_, within the constraints described in this section.
-In some cases, an unambiguous URI-based alternative is available, and OAD authors are RECOMMENDED to always use the alternative:
+In some cases, an unambiguous URI-based alternative is available, and OAD authors are RECOMMENDED to always use the alternative.
+
+For resolving [Components Object](#components-object) and [Tag Object](#tag-object) names from a referenced (non-entry) document, it is RECOMMENDED that tools resolve from the entry document, rather than the current document.
+For resolving an [Operation Object](#operation-object) based on an `operationId`, it is RECOMMENDED to consider all Operation Objects from all parsed documents.
+
 
 | Source | Target | Alternative |
 | ---- | ---- | ---- |
@@ -5597,3 +5573,30 @@ components:
 In this example, all of the `$self` and `$id` values are relative URI-references consisting of an absolute path.
 This allows the retrieval URI to set the host (and scheme), in this case `https://staging.example.com`, resulting in the first document's `$self` being `https://staging.example.com/openapi`, and the second document's `$self` being `https://staging.example.com/api/shared/foo`, with `$id` values of `https://staging.example.com/api/schemas/foo` and `https://staging.example.com/api/schemas/bar`.
 Relative `$self` and `$id` values of this sort  allow the same set of documents to work when deployed to other hosts, e.g. `https://example.com` (production) or `https://localhost:8080` (local development).
+
+## Appendix H: Parsing and Resolution Guidance
+
+Implementations MAY support complete-document parsing in any of the following ways:
+
+* Detecting OpenAPI or JSON Schema documents using media types
+* Detecting OpenAPI documents through the root `openapi` field
+* Detecting JSON Schema documents through detecting keywords or otherwise successfully parsing the document in accordance with the JSON Schema specification
+* Detecting a document containing a referenceable Object at its root based on the expected type of the reference
+* Allowing users to configure the type of documents that might be loaded due to a reference to a non-root Object
+
+Implementations that parse referenced fragments of OpenAPI content without regard for the content of the rest of the containing document will miss keywords that change the meaning and behavior of the reference target.
+In particular, failing to take into account keywords that change the base URI introduces security risks by causing references to resolve to unintended URIs, with unpredictable results.
+While some implementations support this sort of parsing due to the requirements of past versions of this specification, in version 3.1, the result of parsing fragments in isolation is _undefined_ and likely to contradict the requirements of this specification.
+
+While it is possible to structure certain OpenAPI Descriptions to ensure that they will behave correctly when references are parsed as isolated fragments, depending on this is NOT RECOMMENDED.
+This specification does not explicitly enumerate the conditions under which such behavior is safe and provides no guarantee for continued safety in any future versions of the OAS.
+
+### Structural Interoperability
+
+JSON or YAML objects within an OAD are interpreted as specific Objects (such as [Operation Objects](#operation-object), [Response Objects](#response-object), [Reference Objects](#reference-object), etc.) based on their context. Depending on how references are arranged, a given JSON or YAML object can be interpreted in multiple different contexts:
+
+* As the root object of the [entry document](#openapi-description-structure), which is always interpreted as an OpenAPI Object
+* As the Object type implied by its parent Object within the document
+* As a reference target, with the Object type matching the reference source's context
+
+If the same JSON/YAML object is parsed multiple times and the respective contexts require it to be parsed as _different_ Object types, the resulting behavior is _implementation defined_, and MAY be treated as an error if detected. An example would be referencing an empty Schema Object under `#/components/schemas` where a Path Item Object is expected, as an empty object is valid for both types. For maximum interoperability, it is RECOMMENDED that OpenAPI Description authors avoid such scenarios.
