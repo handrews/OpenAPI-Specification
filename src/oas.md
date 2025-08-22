@@ -1262,25 +1262,28 @@ See also the [Media Type Registry](#media-type-registry).
 
 #### Media Types
 
-Media type definitions are spread across several resources.
-The media type definitions SHOULD be in compliance with [RFC6838](https://tools.ietf.org/html/rfc6838).
+Media types are publicly registered with the [IANA media types registry](https://www.iana.org/assignments/media-types/media-types.xhtml), through process documented in [[?RFC6838]].
 
-Some examples of possible media type definitions:
+APIs also sometimes define private media types such as GitHub's `application/vnd.github.v3+json`, which are not registered, and other media types such as `application/schema+json` become widely used before an intended registration.
+
+
+
+Media type definitions are spread across several resources.
+See [[?RFC6838]] for information on how media types are defined and registered, and the  for a list of publicly registered media types.
+
+Some examples of media types that might be used in an API:
 
 ```text
   text/plain; charset=utf-8
   application/json
-  application/vnd.github+json
   application/vnd.github.v3+json
-  application/vnd.github.v3.raw+json
-  application/vnd.github.v3.text+json
-  application/vnd.github.v3.html+json
-  application/vnd.github.v3.full+json
-  application/vnd.github.v3.diff
-  application/vnd.github.v3.patch
+  application/x-www-form-urlencoded
+  application/xml
+  image/svg+xml
+  image/png
 ```
 
-JSON-based and JSON-compatible YAML-based media types can make direct use of the [Schema Object](#schema-object) as the Object uses JSON Schema.
+JSON-based and [JSON-compatible](https://www.rfc-editor.org/rfc/rfc9512.html#name-yaml-and-json) YAML-based media types can make direct use of the [Schema Object](#schema-object) as the Object uses JSON Schema.
 The use of the Schema Object with other media types is handled by mapping them into the JSON Schema [instance data model](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#name-instance-data-model).
 These mappings may be implicit based on the media type, or explicit based on the values of particular fields.
 Each mapping is addressed where the relevant media type is discussed in this section or under the [Media Type Object](#media-type-object) or [Encoding Object](#encoding-object)
