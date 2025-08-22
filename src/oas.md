@@ -16,19 +16,17 @@ For examples of OpenAPI usage and additional documentation, please visit [[?Open
 
 For extension registries and other specifications published by the OpenAPI Initiative, as well as the authoritative rendering of this specification, please visit [spec.openapis.org](https://spec.openapis.org/).
 
-### Versions
+### Versions and Deprecation
 
 The OpenAPI Specification is versioned using a `major`.`minor`.`patch` versioning scheme. The `major`.`minor` portion of the version string (for example `3.1`) SHALL designate the OAS feature set. _`.patch`_ versions address errors in, or provide clarifications to, this document, not the feature set. Tooling which supports OAS 3.1 SHOULD be compatible with all OAS 3.1.\* versions. The patch version SHOULD NOT be considered by tooling, making no distinction between `3.1.0` and `3.1.1` for example.
-
-Occasionally, non-backwards compatible changes may be made in `minor` versions of the OAS where impact is believed to be low relative to the benefit provided.
-
-### Deprecation
 
 Certain fields or features may be marked **Deprecated**.
 These fields and features remain part of the specification and can be used like any other field or feature.
 However, OpenAPI Description authors should use newer fields and features documented to replace the deprecated ones whenever possible.
 
 At this time, such elements are expected to remain part of the OAS until the next major version, although a future minor version of this specification may define a policy for later removal of deprecated elements.
+
+Occasionally, non-backwards compatible changes may be made in `minor` versions of the OAS where impact is believed to be low relative to the benefit provided.
 
 ### Undefined and Implementation-Defined Behavior
 
