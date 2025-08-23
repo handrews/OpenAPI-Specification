@@ -88,7 +88,7 @@ In the following description, if a field is not explicitly **REQUIRED** or descr
 
 ### OpenAPI Object
 
-This is the root object of the [OpenAPI Description](#openapi-description).
+This is the root object of the [OpenAPI Description](#openapi-description-structure).
 
 #### Fixed Fields
 
