@@ -113,11 +113,11 @@ Implementations MAY choose to support referencing by other URIs such as the retr
 
 #### OpenAPI Description Structure
 
-An OpenAPI Description (OAD) formally describes the surface of an API and its semantics. It is composed of an [entry document](#openapi-description-structure), which must be an OpenAPI Document, and any/all of its referenced documents. An OAD uses and conforms to the OpenAPI Specification, and MUST contain at least one [paths](#paths-object) field, [components](#oas-components) field, or [webhooks](#oas-webhooks) field.
+An **OpenAPI Description** (**OAD**) formally describes the surface of an API and its semantics. It is composed of an [entry document](#openapi-description-structure), which must be an OpenAPI Document, and any/all of its referenced documents. An OAD uses and conforms to the OpenAPI Specification, and MUST contain at least one [paths](#paths-object) field, [components](#oas-components) field, or [webhooks](#oas-webhooks) field.
 
-An OpenAPI Document is a single JSON or YAML document that conforms to the OpenAPI Specification. An OpenAPI Document compatible with OAS 3.\*.\* contains a required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
+An **OpenAPI Document** is a single JSON or YAML document that conforms to the OpenAPI Specification. An OpenAPI Document compatible with OAS 3.\*.\* contains a required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
 
-An OpenAPI Description (OAD) MAY be made up of a single JSON or YAML document or be divided into multiple, connected parts at the discretion of the author. In the latter case, [Reference Object](#reference-object), [Path Item Object](#path-item-object) and [Schema Object](#schema-object) `$ref` fields, as well as the [Link Object](#link-object) `operationRef` field, and the URI form of the [Discriminator Object](#discriminator-object) `mapping` field, are used to identify the referenced elements.
+An OpenAPI Description MAY be made up of a single JSON or YAML OpenAPI Document  or be divided into multiple, connected parts at the discretion of the author. In the latter case, [Reference Object](#reference-object), [Path Item Object](#path-item-object) and [Schema Object](#schema-object) `$ref` fields, as well as the [Link Object](#link-object) `operationRef` field, and the URI form of the [Discriminator Object](#discriminator-object) `mapping` field, are used to identify the referenced elements.
 
 In a multi-document OAD, the document containing the OpenAPI Object where parsing begins is known as that OAD's **entry document**.
 
@@ -127,10 +127,10 @@ It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or 
 
 In order to properly handle [Schema Objects](#schema-object), OAS 3.1 inherits the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
 
-This includes a requirement to parse complete documents before deeming a Schema Object reference to be unresolvable, in order to detect keywords that might provide the reference target or impact the determination of the appropriate base URI.
-See [Appendix H: Parsing and Resolution Guidance](#appendix-h-parsing-and-resolution-guidance) for more detailed implementation options and a discussion of the consequences of parsing fragmentary content in isolation.
+This includes a requirement to parse complete documents before deeming a reference to be unresolvable, in order to detect keywords that might provide the reference target or impact the determination of the appropriate base URI.
+See [Appendix H: Parsing and Resolution Guidance](#appendix-h-parsing-and-resolution-guidance) for more detailed implementation options and a discussion of the consequences of parsing fragmentary OAD content (documents without an OpenAPI Object at the root, or a fragment extracted from a document without considering the rest of the document) in isolation.
 
-A special case of parsing fragments of OAS content would be if such fragments are embedded in another format, referred to as an _embedding format_ with respect to the OAS.
+A special case of parsing fragments of OAD content would be if such fragments are embedded in another format, referred to as an _embedding format_ with respect to the OAS.
 Note that the OAS itself is an embedding format with respect to JSON Schema, which is embedded as Schema Objects.
 It is the responsibility of an embedding format to define how to parse embedded content, and OAS implementations that do not document support for an embedding format cannot be expected to parse embedded OAS content correctly.
 
