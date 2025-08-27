@@ -169,7 +169,7 @@ Relative references in CommonMark hyperlinks are resolved in their rendered cont
 Several features of this specification require resolution of non-URI-based connections to some other part of the OpenAPI Description (OAD).
 
 These connections are unambiguously resolved in single-document OADs, but the resolution process in multi-document OADs is _implementation-defined_, within the constraints described in this section.
-In some cases, an unambiguous URI-based alternative is available, and OAD authors are RECOMMENDED to always use the alternative.
+In some cases, an unambiguous URI-based alternative is available, and OAD authors are RECOMMENDED to use the alternative to maximize interoperability.
 
 For resolving [Components Object](#components-object) and [Tag Object](#tag-object) names from a referenced (non-entry) document, it is RECOMMENDED that tools resolve from the entry document, rather than the current document.
 For resolving an [Operation Object](#operation-object) based on an `operationId`, it is RECOMMENDED to consider all Operation Objects from all parsed documents.
