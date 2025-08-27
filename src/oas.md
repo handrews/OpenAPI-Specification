@@ -126,7 +126,7 @@ It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or 
 ##### Parsing Documents
 
 Each OpenAPI Document in an OAD MUST be fully parsed in order to locate possible reference targets, including the OpenAPI Object's [`$self`](#oas-self) field and the [Schema Object's](#schema-object) `$id`, `$anchor`, and `$dynamicAnchor` keyword.
-This includes the parsing requirements of [[JSON-Schema-2020-12|JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
+This includes the parsing requirements of [[JSON-Schema-2020-12|JSON Schema Specification draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
 Implementations MUST NOT treat a reference as unresolvable before completely parsing all Documents provided to the implementation as possible parts of the OAD.
 
 See [Appendix G: Parsing and Resolution Guidance](#appendix-g-parsing-and-resolution-guidance) for more detailed implementation options and a discussion of the consequences of parsing fragmentary OAD content (documents without an OpenAPI Object at the root, or a fragment extracted from a document without considering the rest of the document) in isolation.
@@ -147,7 +147,7 @@ Unless specified otherwise, all fields that are URIs MAY be relative references 
 
 ###### Establishing the Base URI
 
-Relative URI references are resolved using the appropriate base URI, which MUST be determined in accordance with [[RFC3986]] [Section 5.1.1 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.1) and, for Schema objects, [[JSON-Schema-2020-12|JSON Schema draft 2020-12]] [Section 8.2](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8.2), as illustrated by the examples in [Appendix F: Examples of Base URI Determination and Reference Resolution](#appendix-f-examples-of-base-uri-determination-and-reference-resolution).
+Relative URI references are resolved using the appropriate base URI, which MUST be determined in accordance with [[RFC3986]] [Section 5.1.1 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.1) and, for Schema objects, [[JSON-Schema-2020-12]] [Section 8.2](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8.2), as illustrated by the examples in [Appendix F: Examples of Base URI Determination and Reference Resolution](#appendix-f-examples-of-base-uri-determination-and-reference-resolution).
 
 If `$self` is a relative URI-reference, it is resolved against the next possible base URI source ([[RFC3986]] [Section 5.1.2 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.2)) before being used for the resolution of other relative URI-references.
 
@@ -2387,7 +2387,7 @@ Keeping in mind the caveats from the previous section, and that the shorthand `e
 
 To show an example as it would be validated by a Schema Object:
 
-* Use the Schema Object's `examples` array (from JSON Schema draft 2020-12) if the intent is to keep the example with the validating schema.
+* Use the Schema Object's `examples` array (from [[JSON-Schema-Validation-2020-12]]) if the intent is to keep the example with the validating schema.
   * Use the Schema Object's `example` (singular) only if compatibility with OAS v3.0 or earlier is required.
 * Use the Example Object's `dataValue` field if the intent is to associate the example with an example of its serialization, or if it is desirable to maintain it separately from the schema.
   * Use the Example Object's `value` field only if compatibility with OAS v3.1 or earlier is needed and the value can be "naturally represented in JSON or YAML" without any changes (such as percent-encoding) between the validation-ready value and the serialized representation.
@@ -2995,7 +2995,7 @@ Where JSON Schema indicates that behavior is defined by the application (e.g. fo
 
 #### JSON Schema Keywords
 
-The OpenAPI Schema Object [dialect](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.3.3) is defined as requiring the [OAS base vocabulary](#base-vocabulary), in addition to the vocabularies as specified in the JSON Schema Specification Draft 2020-12 [general purpose meta-schema](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8).
+The OpenAPI Schema Object [dialect](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.3.3) is defined as requiring the [OAS base vocabulary](#base-vocabulary), in addition to the vocabularies as specified in the JSON Schema Specification draft 2020-12 [general purpose meta-schema](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8).
 
 The OpenAPI Schema Object dialect for this version of the specification is identified by the URI `https://spec.openapis.org/oas/3.1/dialect/base` (the <a name="dialect-schema-id"></a>"OAS dialect schema id").
 
@@ -3024,7 +3024,7 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 Data types in the OAS are based on the types defined by the [[JSON-Schema-Validation-2020-12|JSON Schema Validation Specification draft 2020-12]] [Section 6.1.1](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-6.1.1):
 "null", "boolean", "object", "array", "number", "string", or "integer".
-Models are defined using the [Schema Object](#schema-object), which is a superset of the JSON Schema Specification Draft 2020-12.
+Models are defined using the [Schema Object](#schema-object), which is a superset of the JSON Schema Specification draft 2020-12.
 
 JSON Schema keywords and `format` values operate on JSON "instances" which may be one of the six JSON data types, "null", "boolean", "object", "array", "number", or "string", with certain keywords and formats only applying to a specific type. For example, the `pattern` keyword and the `date-time` format only apply to strings, and treat any instance of the other five types as _automatically valid._ This means JSON Schema keywords and formats do **NOT** implicitly require the expected type. Use the `type` keyword to explicitly constrain the type.
 
@@ -3236,9 +3236,9 @@ The following table shows how to migrate from OAS 3.0 binary data descriptions, 
 
 #### Extended Validation with Annotations
 
-JSON Schema Draft 2020-12 supports [collecting annotations](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-7.7.1), including [treating unrecognized keywords as annotations](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-6.5).
+JSON Schema draft 2020-12 supports [collecting annotations](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-7.7.1), including [treating unrecognized keywords as annotations](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-6.5).
 OAS implementations MAY use such annotations, including [extensions](https://spec.openapis.org/registry/extension/) not recognized as part of a declared JSON Schema vocabulary, as the basis for further validation.
-Note that JSON Schema Draft 2020-12 does not require an `x-` prefix for extensions.
+Note that JSON Schema draft 2020-12 does not require an `x-` prefix for extensions.
 
 ##### Non-Validating Constraint Keywords
 
@@ -3303,7 +3303,7 @@ The [XML Object](#xml-object) contains additional information about the availabl
 
 It is important for tooling to be able to determine which dialect or meta-schema any given resource wishes to be processed with: JSON Schema Core, JSON Schema Validation, OpenAPI Schema dialect, or some custom meta-schema.
 
-The `$schema` keyword MAY be present in any Schema Object that is a [schema resource root](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.3.5), and if present MUST be used to determine which dialect should be used when processing the schema. This allows use of Schema Objects which comply with other drafts of JSON Schema than the default Draft 2020-12 support. Tooling MUST support the <a href="#dialect-schema-id">OAS dialect schema id</a>, and MAY support additional values of `$schema`.
+The `$schema` keyword MAY be present in any Schema Object that is a [schema resource root](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-4.3.5), and if present MUST be used to determine which dialect should be used when processing the schema. This allows use of Schema Objects which comply with other drafts of JSON Schema than the default draft 2020-12 support. Tooling MUST support the <a href="#dialect-schema-id">OAS dialect schema id</a>, and MAY support additional values of `$schema`.
 
 To allow use of a different default `$schema` value for all Schema Objects contained within an OAS document, a `jsonSchemaDialect` value may be set within the <a href="#openapi-object">OpenAPI Object</a>. If this default is not set, then the OAS dialect schema id MUST be used for these Schema Objects. The value of `$schema` within a resource root Schema Object always overrides any default.
 
