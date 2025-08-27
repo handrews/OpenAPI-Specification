@@ -72,7 +72,7 @@ However, the case sensitivity of field names and values that map directly to HTT
 ### Rich Text Formatting
 
 Throughout the specification `description` fields are noted as supporting CommonMark markdown formatting.
-Where OpenAPI tooling renders rich text it MUST support, at a minimum, markdown syntax as described by [CommonMark 0.27](https://spec.commonmark.org/0.27/). Tooling MAY choose to ignore some CommonMark or extension features to address security concerns.
+Where OpenAPI tooling renders rich text it MUST support, at a minimum, markdown syntax as described by [[CommonMark-0.27|CommonMark 0.27]]. Tooling MAY choose to ignore some CommonMark or extension features to address security concerns.
 
 While the framing of CommonMark 0.27 as a minimum requirement means that tooling MAY choose to implement extensions on top of it, note that any such extensions are by definition implementation-defined and will not be interoperable.
 OpenAPI Description authors SHOULD consider how text using such extensions will be rendered by tools that offer only the minimum support.
@@ -189,7 +189,7 @@ The metadata MAY be used by the clients if needed, and MAY be presented in editi
 | ---- | :----: | ---- |
 | <a name="info-title"></a>title | `string` | **REQUIRED**. The title of the API. |
 | <a name="info-summary"></a>summary | `string` | A short summary of the API. |
-| <a name="info-description"></a>description | `string` | A description of the API. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="info-description"></a>description | `string` | A description of the API. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="info-terms-of-service"></a>termsOfService | `string` | A URI for the Terms of Service for the API. This MUST be in the form of a URI. |
 | <a name="info-contact"></a>contact | [Contact Object](#contact-object) | The contact information for the exposed API. |
 | <a name="info-license"></a>license | [License Object](#license-object) | The license information for the exposed API. |
@@ -266,7 +266,7 @@ An object representing a Server.
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="server-url"></a>url | `string` | **REQUIRED**. A URL to the target host. This URL supports Server Variables and MAY be relative, to indicate that the host location is relative to the location where the document containing the Server Object is being served. Query and fragment MUST NOT be part of this URL. Variable substitutions will be made when a variable is named in `{`braces`}`. |
-| <a name="server-description"></a>description | `string` | An optional string describing the host designated by the URL. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="server-description"></a>description | `string` | An optional string describing the host designated by the URL. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="server-name"></a>name | `string` | An optional unique string to refer to the host designated by the URL. |
 | <a name="server-variables"></a>variables | Map[`string`, [Server Variable Object](#server-variable-object)] | A map between a variable name and its value. The value is used for substitution in the server's URL template. |
 
@@ -353,7 +353,7 @@ servers:
 
 An object representing a Server Variable for server URL template substitution.
 
-The server URL templating is defined by the following [ABNF](https://tools.ietf.org/html/rfc5234) syntax.
+The server URL templating is defined by the following [[ABNF]] syntax.
 
 ```abnf
 server-url-template  = 1*( literals / server-variable )
@@ -388,7 +388,7 @@ See the [Paths Object](#paths-object) for guidance on constructing full request 
 | ---- | :----: | ---- |
 | <a name="server-variable-enum"></a>enum | [`string`] | An enumeration of string values to be used if the substitution options are from a limited set. The array MUST NOT be empty. |
 | <a name="server-variable-default"></a>default | `string` | **REQUIRED**. The default value to use for substitution, which SHALL be sent if an alternate value is _not_ supplied. If the [`enum`](#server-variable-enum) is defined, the value MUST exist in the enum's values. Note that this behavior is different from the [Schema Object](#schema-object)'s `default` keyword, which documents the receiver's behavior rather than inserting the value into the data. |
-| <a name="server-variable-description"></a>description | `string` | An optional description for the server variable. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="server-variable-description"></a>description | `string` | An optional description for the server variable. [[CommonMark]] MAY be used for rich text representation. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
 
@@ -595,7 +595,7 @@ The path itself is still exposed to the documentation viewer but they will not k
 | ---- | :----: | ---- |
 | <a name="path-item-ref"></a>$ref | `string` | Allows for a referenced definition of this path item. The value MUST be in the form of a URI, and the referenced structure MUST be in the form of a [Path Item Object](#path-item-object). In case a Path Item Object field appears both in the defined object and the referenced object, the behavior is undefined. See the rules for resolving [Relative References](#relative-references-in-api-description-uris). <br><br>_**Note:** The behavior of `$ref` with adjacent properties is likely to change in future versions of this specification to bring it into closer alignment with the behavior of the [Reference Object](#reference-object)._ |
 | <a name="path-item-summary"></a>summary | `string` | An optional string summary, intended to apply to all operations in this path. |
-| <a name="path-item-description"></a>description | `string` | An optional string description, intended to apply to all operations in this path. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="path-item-description"></a>description | `string` | An optional string description, intended to apply to all operations in this path. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="path-item-get"></a>get | [Operation Object](#operation-object) | A definition of a GET operation on this path. |
 | <a name="path-item-put"></a>put | [Operation Object](#operation-object) | A definition of a PUT operation on this path. |
 | <a name="path-item-post"></a>post | [Operation Object](#operation-object) | A definition of a POST operation on this path. |
@@ -675,7 +675,7 @@ Describes a single API operation on a path.
 | ---- | :----: | ---- |
 | <a name="operation-tags"></a>tags | [`string`] | A list of tags for API documentation control. Tags can be used for logical grouping of operations by resources or any other qualifier. |
 | <a name="operation-summary"></a>summary | `string` | A short summary of what the operation does. |
-| <a name="operation-description"></a>description | `string` | A verbose explanation of the operation behavior. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="operation-description"></a>description | `string` | A verbose explanation of the operation behavior. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="operation-external-docs"></a>externalDocs | [External Documentation Object](#external-documentation-object) | Additional external documentation for this operation. |
 | <a name="operation-id"></a>operationId | `string` | Unique string used to identify the operation. The id MUST be unique among all operations described in the API. The operationId value is **case-sensitive**. Tools and libraries MAY use the operationId to uniquely identify an operation, therefore, it is RECOMMENDED to follow common programming naming conventions. |
 | <a name="operation-parameters"></a>parameters | [[Parameter Object](#parameter-object) \| [Reference Object](#reference-object)] | A list of parameters that are applicable for this operation. If a parameter is already defined at the [Path Item](#path-item-parameters), the new definition will override it but can never remove it. The list MUST NOT include duplicated parameters. A unique parameter is defined by a combination of a [name](#parameter-name) and [location](#parameter-in). The list can use the [Reference Object](#reference-object) to link to parameters that are defined in the [OpenAPI Object's `components.parameters`](#components-parameters). |
@@ -741,7 +741,7 @@ Allows referencing an external resource for extended documentation.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="external-doc-description"></a>description | `string` | A description of the target documentation. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="external-doc-description"></a>description | `string` | A description of the target documentation. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="external-doc-url"></a>url | `string` | **REQUIRED**. The URI for the target documentation. This MUST be in the form of a URI. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
@@ -787,7 +787,7 @@ The `example` and `examples` fields are mutually exclusive; see [Working with Ex
 | ---- | :----: | ---- |
 | <a name="parameter-name"></a>name | `string` | **REQUIRED**. The name of the parameter. Parameter names are _case sensitive_. <ul><li>If [`in`](#parameter-in) is `"path"`, the `name` field MUST correspond to a single template expression occurring within the [path](#paths-path) field in the [Paths Object](#paths-object). See [Path Templating](#path-templating) for further information.<li>If [`in`](#parameter-in) is `"header"` and the `name` field is `"Accept"`, `"Content-Type"` or `"Authorization"`, the parameter definition SHALL be ignored.<li>If `in` is `"querystring"`, or for [certain combinations](#style-examples) of [`style`](#parameter-style) and [`explode`](#parameter-explode), the value of `name` is not used in the parameter serialization.<li>For all other cases, the `name` corresponds to the parameter name used by the [`in`](#parameter-in) field.</ul> |
 | <a name="parameter-in"></a>in | `string` | **REQUIRED**. The location of the parameter. Possible values are `"query"`, `"querystring"`, `"header"`, `"path"` or `"cookie"`. |
-| <a name="parameter-description"></a>description | `string` | A brief description of the parameter. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="parameter-description"></a>description | `string` | A brief description of the parameter. This could contain examples of use. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="parameter-required"></a>required | `boolean` | Determines whether this parameter is mandatory. If the [parameter location](#parameter-in) is `"path"`, this field is **REQUIRED** and its value MUST be `true`. Otherwise, the field MAY be included and its default value is `false`. |
 | <a name="parameter-deprecated"></a> deprecated | `boolean` | Specifies that a parameter is deprecated and SHOULD be transitioned out of usage. Default value is `false`. |
 | <a name="parameter-allow-empty-value"></a> allowEmptyValue | `boolean` | If `true`, clients MAY pass a zero-length string value in place of parameters that would otherwise be omitted entirely, which the server SHOULD interpret as the parameter being unused. Default value is `false`. If [`style`](#parameter-style) is used, and if [behavior is _n/a_ (cannot be serialized)](#style-examples), the value of `allowEmptyValue` SHALL be ignored. Interactions between this field and the parameter's [Schema Object](#schema-object) are implementation-defined. This field is valid only for `query` parameters. <br><br>**Deprecated:** Use of this field is NOT RECOMMENDED, and it is likely to be removed in a later revision. |
@@ -1206,7 +1206,7 @@ Describes a single request body.
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="request-body-description"></a>description | `string` | A brief description of the request body. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="request-body-description"></a>description | `string` | A brief description of the request body. This could contain examples of use. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="request-body-content"></a>content | Map[`string`, [Media Type Object](#media-type-object) \| [Reference Object](#reference-object)] | **REQUIRED**. The content of the request body. The key is a media type or [media type range](https://www.rfc-editor.org/rfc/rfc9110.html#appendix-A) and the value describes it. The map SHOULD have at least one entry; if it does not, the behavior is implementation-defined. For requests that match multiple keys, only the most specific key is applicable. e.g. `"text/plain"` overrides `"text/*"` |
 | <a name="request-body-required"></a>required | `boolean` | Determines if the request body is required in the request. Defaults to `false`. |
 
@@ -1486,7 +1486,7 @@ application/json:
 ##### Sequential JSON
 
 For any [sequential media type](#sequential-media-types) where the items in the sequence are JSON values, no conversion of each value is required.
-JSON Text Sequences ([[?RFC7464]] `application/json-seq` and [[?RFC8091]] the `+json-seq` structured suffix), JSON Lines ([[?JSON-LINES]]], `application/jsonl`), and [NDJSON](https://github.com/ndjson/ndjson-spec) (`application/x-ndjson`) are all in this category.
+JSON Text Sequences ([[?RFC7464]] `application/json-seq` and [[?RFC8091]] the `+json-seq` structured suffix), [[JSONL|JSON Lines]] (`application/jsonl`), and [NDJSON](https://github.com/ndjson/ndjson-spec) (`application/x-ndjson`) are all in this category.
 Note that the media types for JSON Lines and NDJSON are not registered with the IANA, but are in common use.
 
 The following example shows Media Type Objects for both streaming log entries and returning a fixed-length set in response to a query.
@@ -2150,7 +2150,7 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 #### HTTP Status Codes
 
 The HTTP Status Codes are used to indicate the status of the executed operation.
-Status codes SHOULD be selected from the available status codes registered in the [[IANA Status Code Registry]].
+Status codes SHOULD be selected from the available status codes registered in the [[IANA-HTTP-STATUS-CODES|IANA Status Code Registry]].
 
 #### Responses Object Example
 
@@ -2181,7 +2181,7 @@ Describes a single response from an API operation, including design-time, static
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="response-summary"></a>summary | `string` | A short summary of the meaning of the response. |
-| <a name="response-description"></a>description | `string` | A description of the response. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="response-description"></a>description | `string` | A description of the response. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="response-headers"></a>headers | Map[`string`, [Header Object](#header-object) \| [Reference Object](#reference-object)] | Maps a header name to its definition. [[RFC9110]] [Section 5.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.1) states header names are case insensitive. If a response header is defined with the name `"Content-Type"`, it SHALL be ignored. |
 | <a name="response-content"></a>content | Map[`string`, [Media Type Object](#media-type-object) \| [Reference Object](#reference-object)] | A map containing descriptions of potential response payloads. The key is a media type or [media type range](https://www.rfc-editor.org/rfc/rfc9110.html#appendix-A) and the value describes it. For responses that match multiple keys, only the most specific key is applicable. e.g. `"text/plain"` overrides `"text/*"` |
 | <a name="response-links"></a>links | Map[`string`, [Link Object](#link-object) \| [Reference Object](#reference-object)] | A map of operations links that can be followed from the response. The key of the map is a short name for the link, following the naming constraints of the names for [Component Objects](#components-object). |
@@ -2351,7 +2351,7 @@ The various fields and types of examples are explained in more detail under [Wor
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="example-summary"></a>summary | `string` | Short description for the example. |
-| <a name="example-description"></a>description | `string` | Long description for the example. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="example-description"></a>description | `string` | Long description for the example. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="example-data-value"></a>dataValue | Any | An example of the data structure that MUST be valid according to the relevant [Schema Object](#schema-object).  If this field is present, `value` MUST be absent. |
 | <a name="example-serialized-value"></a>serializedValue | `string` | An example of the serialized form of the value, including encoding and escaping as described under [Validating Examples](#validating-examples).  If `dataValue` is present, then this field SHOULD contain the serialization of the given data.  Otherwise, it SHOULD be the valid serialization of a data value that itself MUST be valid as described for `dataValue`.  This field SHOULD NOT be used if the serialization format is JSON, as the data form is easier to work with. If this field is present, `value`, and `externalValue` MUST be absent. |
 | <a name="example-external-value"></a>externalValue | `string` | A URI that identifies the serialized example in a separate document, allowing for values not easily or readably expressed as a Unicode string.  If `dataValue` is present, then this field SHOULD identify a serialization of the given data.  Otherwise, the value SHOULD be the valid serialization of a data value that itself MUST be valid as described for `dataValue`. If this field is present, `serializedValue`, and `value` MUST be absent. See also the rules for resolving [Relative References](#relative-references-in-api-description-uris). |
@@ -2518,7 +2518,7 @@ For computing links and providing instructions to execute them, a [runtime expre
 | <a name="link-operation-id"></a>operationId | `string` | The name of an _existing_, resolvable OAS operation, as defined with a unique `operationId`. This field is mutually exclusive of the `operationRef` field. |
 | <a name="link-parameters"></a>parameters | Map[`string`, Any \| [{expression}](#runtime-expressions)] | A map representing parameters to pass to an operation as specified with `operationId` or identified via `operationRef`. The key is the parameter name to be used (optionally qualified with the parameter location, e.g. `path.id` for an `id` parameter in the path), whereas the value can be a constant or an expression to be evaluated and passed to the linked operation. |
 | <a name="link-request-body"></a>requestBody | Any \| [{expression}](#runtime-expressions) | A literal value or [{expression}](#runtime-expressions) to use as a request body when calling the target operation. |
-| <a name="link-description"></a>description | `string` | A description of the link. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="link-description"></a>description | `string` | A description of the link. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="link-server"></a>server | [Server Object](#server-object) | A server object to be used by the target operation. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
@@ -2694,7 +2694,7 @@ The `example` and `examples` fields are mutually exclusive; see [Working with Ex
 
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
-| <a name="header-description"></a>description | `string` | A brief description of the header. This could contain examples of use. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="header-description"></a>description | `string` | A brief description of the header. This could contain examples of use. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="header-required"></a>required | `boolean` | Determines whether this header is mandatory. The default value is `false`. |
 | <a name="header-deprecated"></a> deprecated | `boolean` | Specifies that the header is deprecated and SHOULD be transitioned out of usage. Default value is `false`. |
 | <a name="header-example"></a>example | Any | Example of the header's potential value; see [Working With Examples](#working-with-examples). |
@@ -2917,7 +2917,7 @@ It is not mandatory to have a Tag Object per tag defined in the Operation Object
 | ---- | :----: | ---- |
 | <a name="tag-name"></a>name | `string` | **REQUIRED**. The name of the tag. Use this value in the `tags` array of an Operation. |
 | <a name="tag-summary"></a>summary | `string` | A short summary of the tag, used for display purposes. |
-| <a name="tag-description"></a>description | `string` | A description for the tag. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="tag-description"></a>description | `string` | A description for the tag. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="tag-external-docs"></a>externalDocs | [External Documentation Object](#external-documentation-object) | Additional external documentation for this tag. |
 | <a name="tag-parent"></a>parent | `string` | The `name` of a tag that this tag is nested under. The named tag MUST exist in the API description, and circular references between parent and child tags MUST NOT be used. |
 | <a name="tag-kind"></a>kind | `string` | A machine-readable string to categorize what sort of tag it is. Any string value can be used; common uses are `nav` for Navigation, `badge` for visible badges, `audience` for APIs used by different groups. A [registry of the most commonly used values](https://spec.openapis.org/registry/tag-kind/) is available. |
@@ -2959,7 +2959,7 @@ See the rules for resolving [Relative References](#relative-references-in-api-de
 | ---- | :----: | ---- |
 | <a name="reference-ref"></a>$ref | `string` | **REQUIRED**. The reference identifier. This MUST be in the form of a URI. |
 | <a name="reference-summary"></a>summary | `string` | A short summary which by default SHOULD override that of the referenced component. If the referenced object-type does not allow a `summary` field, then this field has no effect. |
-| <a name="reference-description"></a>description | `string` | A description which by default SHOULD override that of the referenced component. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. If the referenced object-type does not allow a `description` field, then this field has no effect. |
+| <a name="reference-description"></a>description | `string` | A description which by default SHOULD override that of the referenced component. [[CommonMark]] syntax MAY be used for rich text representation. If the referenced object-type does not allow a `description` field, then this field has no effect. |
 
 This object cannot be extended with additional properties, and any properties added SHALL be ignored.
 
@@ -3001,7 +3001,7 @@ The OpenAPI Schema Object dialect for this version of the specification is ident
 
 The following keywords are taken from the JSON Schema specification but their definitions have been extended by the OAS:
 
-* description - [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation.
+* description - [[CommonMark]] syntax MAY be used for rich text representation.
 * format - See [Data Type Formats](#data-type-format) for further details. While relying on JSON Schema's defined formats, the OAS offers a few additional predefined formats.
 
 In addition to the JSON Schema keywords comprising the OAS dialect, the Schema Object supports keywords from any other vocabularies, or entirely arbitrary properties.
@@ -4576,10 +4576,10 @@ Please note that as of 2020, the implicit flow is about to be deprecated by [OAu
 | Field Name | Type | Applies To | Description |
 | ---- | :----: | ---- | ---- |
 | <a name="security-scheme-type"></a>type | `string` | Any | **REQUIRED**. The type of the security scheme. Valid values are `"apiKey"`, `"http"`, `"mutualTLS"`, `"oauth2"`, `"openIdConnect"`. |
-| <a name="security-scheme-description"></a>description | `string` | Any | A description for security scheme. [CommonMark syntax](https://spec.commonmark.org/) MAY be used for rich text representation. |
+| <a name="security-scheme-description"></a>description | `string` | Any | A description for security scheme. [[CommonMark]] syntax MAY be used for rich text representation. |
 | <a name="security-scheme-name"></a>name | `string` | `apiKey` | **REQUIRED**. The name of the header, query or cookie parameter to be used. |
 | <a name="security-scheme-in"></a>in | `string` | `apiKey` | **REQUIRED**. The location of the API key. Valid values are `"query"`, `"header"`, or `"cookie"`. |
-| <a name="security-scheme-scheme"></a>scheme | `string` | `http` | **REQUIRED**. The name of the HTTP Authentication scheme to be used in the Authorization header as defined in [[RFC9110]] [Section 16.4.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-16.4.1). The values used SHOULD be registered in the [[IANA Authentication Scheme registry]]. The value is case-insensitive, as defined in [[RFC9110]] [Section 11.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-11.1). |
+| <a name="security-scheme-scheme"></a>scheme | `string` | `http` | **REQUIRED**. The name of the HTTP Authentication scheme to be used in the Authorization header as defined in [[RFC9110]] [Section 16.4.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-16.4.1). The values used SHOULD be registered in the [[IANA-HTTP-AUTHSCHEMES\|IANA Authentication Scheme registry]]. The value is case-insensitive, as defined in [[RFC9110]] [Section 11.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-11.1). |
 | <a name="security-scheme-bearer-format"></a>bearerFormat | `string` | `http` (`"bearer"`) | A hint to the client to identify how the bearer token is formatted. Bearer tokens are usually generated by an authorization server, so this information is primarily for documentation purposes. |
 | <a name="security-scheme-flows"></a>flows | [OAuth Flows Object](#oauth-flows-object) | `oauth2` | **REQUIRED**. An object containing configuration information for the flow types supported. |
 | <a name="security-scheme-open-id-connect-url"></a>openIdConnectUrl | `string` | `openIdConnect` | **REQUIRED**. [Well-known URL](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig) to discover the [[OpenID-Connect-Discovery]] [provider metadata](https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata). |
