@@ -59,7 +59,7 @@ Patterned fields MUST have unique names within the containing object.
 
 ### JSON and YAML Compatibility
 
-In order to preserve the ability to round-trip between YAML and JSON formats, YAML version [1.2](https://yaml.org/spec/1.2/spec.html) is RECOMMENDED along with the additional constraints listed in [[RFC9512]] [Section 3.4](https://www.rfc-editor.org/rfc/rfc9512.html#name-yaml-and-json).
+In order to preserve the ability to round-trip between YAML and JSON formats, [[YAML|YAML version 1.2]] is RECOMMENDED along with the additional constraints listed in [[RFC9512]] [Section 3.4](https://www.rfc-editor.org/rfc/rfc9512.html#name-yaml-and-json).
 
 The recommendation in previous versions of this specification to restrict YAML to its "JSON" [schema ruleset](https://yaml.org/spec/1.2/spec.html#id2803231) allowed for the inclusion of certain values that (despite the name) cannot be represented in JSON.
 OAD authors SHOULD NOT rely on any such JSON-incompatible YAML values.
@@ -126,7 +126,7 @@ It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or 
 ##### Parsing Documents
 
 Each OpenAPI Document in an OAD MUST be fully parsed in order to locate possible reference targets, including the OpenAPI Object's [`$self`](#oas-self) field and the [Schema Object's](#schema-object) `$id`, `$anchor`, and `$dynamicAnchor` keyword.
-This includes the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
+This includes the parsing requirements of [[JSON-Schema-2020-12|JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
 Implementations MUST NOT treat a reference as unresolvable before completely parsing all Documents provided to the implementation as possible parts of the OAD.
 
 See [Appendix G: Parsing and Resolution Guidance](#appendix-g-parsing-and-resolution-guidance) for more detailed implementation options and a discussion of the consequences of parsing fragmentary OAD content (documents without an OpenAPI Object at the root, or a fragment extracted from a document without considering the rest of the document) in isolation.
@@ -147,7 +147,7 @@ Unless specified otherwise, all fields that are URIs MAY be relative references 
 
 ###### Establishing the Base URI
 
-Relative URI references are resolved using the appropriate base URI, which MUST be determined in accordance with [[RFC3986]] [Section 5.1.1 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.1) and, for Schema objects, [JSON Schema draft 2020-12 Section 8.2](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8.2), as illustrated by the examples in [Appendix F: Examples of Base URI Determination and Reference Resolution](#appendix-f-examples-of-base-uri-determination-and-reference-resolution).
+Relative URI references are resolved using the appropriate base URI, which MUST be determined in accordance with [[RFC3986]] [Section 5.1.1 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.1) and, for Schema objects, [[JSON-Schema-2020-12|JSON Schema draft 2020-12]] [Section 8.2](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-8.2), as illustrated by the examples in [Appendix F: Examples of Base URI Determination and Reference Resolution](#appendix-f-examples-of-base-uri-determination-and-reference-resolution).
 
 If `$self` is a relative URI-reference, it is resolved against the next possible base URI source ([[RFC3986]] [Section 5.1.2 – 5.1.4](https://tools.ietf.org/html/rfc3986#section-5.1.2)) before being used for the resolution of other relative URI-references.
 
@@ -245,7 +245,7 @@ License information for the exposed API.
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="license-name"></a>name | `string` | **REQUIRED**. The license name used for the API. |
-| <a name="license-identifier"></a>identifier | `string` | An [SPDX](https://spdx.org/licenses/) license expression for the API. The `identifier` field is mutually exclusive of the `url` field. |
+| <a name="license-identifier"></a>identifier | `string` | An [[SPDX-licenses\|SPDX]] license expression for the API. The `identifier` field is mutually exclusive of the `url` field. |
 | <a name="license-url"></a>url | `string` | A URI for the license used for the API. This MUST be in the form of a URI. The `url` field is mutually exclusive of the `identifier` field. |
 
 This object MAY be extended with [Specification Extensions](#specification-extensions).
@@ -2986,9 +2986,9 @@ $ref: definitions.yaml#/Pet
 ### Schema Object
 
 The Schema Object allows the definition of input and output data types.
-These types can be objects, but also primitives and arrays. This object is a superset of the [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html). The empty schema (which allows any instance to validate) MAY be represented by the boolean value `true` and a schema which allows no instance to validate MAY be represented by the boolean value `false`.
+These types can be objects, but also primitives and arrays. This object is a superset of the [[JSON-Schema-2020-12|JSON Schema Specification draft 2020-12]]. The empty schema (which allows any instance to validate) MAY be represented by the boolean value `true` and a schema which allows no instance to validate MAY be represented by the boolean value `false`.
 
-For more information about the keywords, see [JSON Schema Core](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html) and [JSON Schema Validation](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html).
+For more information about the keywords, see [[JSON-Schema-2020-12|JSON Schema Core]] and [[JSON-Schema-Validation-2020-12|JSON Schema Validation]].
 
 Unless stated otherwise, the keyword definitions follow those of JSON Schema and do not add any additional semantics; this includes keywords such as `$schema`, `$id`, `$ref`, and `$dynamicRef` being URIs rather than URLs.
 Where JSON Schema indicates that behavior is defined by the application (e.g. for annotations), OAS also defers the definition of semantics to the application consuming the OpenAPI document.
@@ -3022,7 +3022,7 @@ This object MAY be extended with [Specification Extensions](#specification-exten
 
 #### Data Types
 
-Data types in the OAS are based on the types defined by the [JSON Schema Validation Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-6.1.1):
+Data types in the OAS are based on the types defined by the [[JSON-Schema-Validation-2020-12|JSON Schema Validation Specification draft 2020-12]] [Section 6.1.1](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-6.1.1):
 "null", "boolean", "object", "array", "number", "string", or "integer".
 Models are defined using the [Schema Object](#schema-object), which is a superset of the JSON Schema Specification Draft 2020-12.
 
@@ -3032,12 +3032,12 @@ Note that the `type` keyword allows `"integer"` as a value for convenience, but 
 
 ##### Data Type Format
 
-As defined by the [JSON Schema Validation specification](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-7.3), data types can have an optional modifier keyword: `format`. As described in that specification, `format` is treated as a non-validating annotation by default; the ability to validate `format` varies across implementations.
+As defined by [[JSON-Schema-Validation-2020-12]] [Section 7.3](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-7.3), data types can have an optional modifier keyword: `format`. As described in that specification, `format` is treated as a non-validating annotation by default; the ability to validate `format` varies across implementations.
 
 The OpenAPI Initiative also hosts a [Format Registry](https://spec.openapis.org/registry/format/) for formats defined by OAS users and other specifications. Support for any registered format is strictly OPTIONAL, and support for one registered format does not imply support for any others.
 
 Types that are not accompanied by a `format` keyword follow the type definition in the JSON Schema. Tools that do not recognize a specific `format` MAY default back to the `type` alone, as if the `format` is not specified.
-For the purpose of [JSON Schema validation](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-7.1), each format should specify the set of JSON data types for which it applies. In this registry, these types are shown in the "JSON Data Type" column.
+For the purpose of [[JSON-Schema-Validation-2020-12]] [Section 7.1](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-7.1), each format should specify the set of JSON data types for which it applies. In this registry, these types are shown in the "JSON Data Type" column.
 
 The formats defined by the OAS are:
 
@@ -3249,7 +3249,7 @@ Extended validation is one way that these constraints MAY be enforced.
 
 The `readOnly` and `writeOnly` keywords are annotations, as JSON Schema is not aware of how the data it is validating is being used.
 Validation of these keywords MAY be done by checking the annotation, the read or write direction, and (if relevant) the current value of the field.
-[JSON Schema Validation Draft 2020-12 Section 9.4](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-9.4) defines the expectations of these keywords, including that a resource (described as the "owning authority") MAY either ignore a `readOnly` field or treat it as an error.
+[[JSON-Schema-Validation-2020-12]] [Section 9.4](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-9.4) defines the expectations of these keywords, including that a resource (described as the "owning authority") MAY either ignore a `readOnly` field or treat it as an error.
 
 Fields that are both required and read-only are an example of when it is beneficial to ignore a `readOnly: true` constraint in a PUT, particularly if the value has not been changed.
 This allows correctly requiring the field on a GET and still using the same representation and schema with PUT.
@@ -3892,7 +3892,7 @@ Note that when using arrays, singular vs plural forms are _not_ inferred, and mu
 
 #### Namespace Limitations
 
-The `namespace` field is intended to match the syntax of [XML namespaces](https://www.w3.org/TR/xml-names11/), although there are a few caveats:
+The `namespace` field is intended to match the syntax of [[xml-names11|XML namespaces]] although there are a few caveats:
 
 * Versions 3.1.0, 3.0.3, and earlier of this specification erroneously used the term "absolute URI" instead of "non-relative URI" ("non-relative IRI" as of OAS v3.2.0), so authors using namespaces that include a fragment should check tooling support carefully.
 * XML allows but discourages relative IRI-references, while this specification outright forbids them.
@@ -4763,10 +4763,9 @@ Support for any one extension is OPTIONAL, and support for one extension does no
 
 OpenAPI Descriptions use a combination of JSON, YAML, and JSON Schema, and therefore share their security considerations:
 
-* [JSON](https://www.iana.org/assignments/media-types/application/json)
-* [YAML](https://www.iana.org/assignments/media-types/application/yaml)
-* [JSON Schema Core](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-13)
-* [JSON Schema Validation](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-10)
+* JSON: [[RFC8250]] [Section 12](https://www.rfc-editor.org/rfc/rfc8259.html#section-12)
+* YAML: [[RFC9512]] [Section 4](https://www.rfc-editor.org/rfc/rfc9512.html#name-security-considerations)
+* JSON Schema: [[JSON-Schema-2020-12]] [Section 13](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-13) and [[JSON-Schema-Validation-2020-12]] [Section 10](https://www.ietf.org/archive/id/draft-bhutton-json-schema-validation-01.html#section-10)
 
 ### Tooling and Usage Scenarios
 
