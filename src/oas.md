@@ -2,7 +2,7 @@
 
 ## Version 3.2.0
 
-The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [BCP 14](https://tools.ietf.org/html/bcp14) [RFC2119](https://tools.ietf.org/html/rfc2119) [RFC8174](https://tools.ietf.org/html/rfc8174) when, and only when, they appear in all capitals, as shown here.
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [BCP 14](https://tools.ietf.org/html/bcp14) [[RFC2119]] [[RFC8174]] when, and only when, they appear in all capitals, as shown here.
 
 This document is licensed under [The Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0.html).
 
@@ -158,7 +158,7 @@ Therefore, all implementations SHOULD allow users to provide documents with thei
 
 ###### Resolving URI fragments
 
-If a URI contains a fragment identifier, then the fragment should be resolved per the fragment resolution mechanism of the referenced document. If the representation of the referenced document is JSON or YAML, then the fragment identifier SHOULD be interpreted as a JSON-Pointer as per [RFC6901](https://tools.ietf.org/html/rfc6901).
+If a URI contains a fragment identifier, then the fragment should be resolved per the fragment resolution mechanism of the referenced document. If the representation of the referenced document is JSON or YAML, then the fragment identifier SHOULD be interpreted as a JSON-Pointer as per [[RFC6901]].
 
 ###### Relative URI References in CommonMark Fields
 
@@ -278,7 +278,7 @@ See [Examples of API Base URL Determination](#examples-of-api-base-url-determina
 
 API endpoints are by definition accessed as locations, and are described by this specification as **_URLs_**.
 
-Unless specified otherwise, all fields that are URLs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2).
+Unless specified otherwise, all fields that are URLs MAY be relative references as defined by [[RFC3986]] [Section 4.2](https://tools.ietf.org/html/rfc3986#section-4.2).
 
 Because the API is a distinct entity from the OpenAPI Document, RFC3986's base URI rules for the OpenAPI Document do not apply.
 Unless specified otherwise, relative references are resolved using the URLs defined in the [Server Object](#server-object) as a base URL. Note that these themselves MAY be relative to the referring document.
@@ -376,7 +376,7 @@ ucschar        =  %xA0-D7FF / %xF900-FDCF / %xFDF0-FFEF
 iprivate       =  %xE000-F8FF / %xF0000-FFFFD / %x100000-10FFFD
 ```
 
-Here, `literals`, `pct-encoded`, `ucschar` and `iprivate` definitions are taken from [RFC 6570](https://www.rfc-editor.org/rfc/rfc6570), incorporating the corrections specified in [Errata 6937](https://www.rfc-editor.org/errata/eid6937) for `literals`.
+Here, `literals`, `pct-encoded`, `ucschar` and `iprivate` definitions are taken from [[RFC6570]] incorporating the corrections specified in [[EDIT6937]] for `literals`.
 
 Each server variable MUST NOT appear more than once in the URL template.
 
@@ -518,7 +518,7 @@ Path templating refers to the usage of template expressions, delimited by curly 
 
 Each template expression in the path MUST correspond to a path parameter that is included in the [Path Item](#path-item-object) itself and/or in each of the Path Item's [Operations](#operation-object). An exception is if the path item is empty, for example due to ACL constraints, matching path parameters are not required.
 
-The value for these path parameters MUST NOT contain any unescaped "generic syntax" characters described by [RFC3986](https://tools.ietf.org/html/rfc3986#section-3): forward slashes (`/`), question marks (`?`), or hashes (`#`).
+The value for these path parameters MUST NOT contain any unescaped "generic syntax" characters described by [[RFC3986]] [Section 3](https://tools.ietf.org/html/rfc3986#section-3): forward slashes (`/`), question marks (`?`), or hashes (`#`).
 See [URL Percent-Encoding](#url-percent-encoding) for additional guidance on escaping characters.
 
 The path templating is defined by the following [ABNF](https://tools.ietf.org/html/rfc5234) syntax
@@ -537,7 +537,7 @@ sub-delims          = "!" / "$" / "&" / "'" / "(" / ")"
                     / "*" / "+" / "," / ";" / "="
 ```
 
-Here, `pchar`, `unreserved`, `pct-encoded` and `sub-delims` definitions are taken from [RFC 3986](https://tools.ietf.org/html/rfc3986). The `path-template` is directly derived from [RFC 3986, section 3.3](https://datatracker.ietf.org/doc/html/rfc3986#section-3.3).
+Here, `pchar`, `unreserved`, `pct-encoded` and `sub-delims` definitions are taken from [[RFC3986]]. The `path-template` is directly derived from [[RFC3986]] [Section 3.3](https://datatracker.ietf.org/doc/html/rfc3986#section-3.3).
 
 Each template expression MUST NOT appear more than once in a single path template.
 
@@ -1486,7 +1486,7 @@ application/json:
 ##### Sequential JSON
 
 For any [sequential media type](#sequential-media-types) where the items in the sequence are JSON values, no conversion of each value is required.
-JSON Text Sequences ([[?RFC7464]] `application/json-seq` and [[?RFC8091]] the `+json-seq` structured suffix), [JSON Lines](https://jsonlines.org/) (`application/jsonl`), and [NDJSON](https://github.com/ndjson/ndjson-spec) (`application/x-ndjson`) are all in this category.
+JSON Text Sequences ([[?RFC7464]] `application/json-seq` and [[?RFC8091]] the `+json-seq` structured suffix), [[?JSON-LINES]]] (`application/jsonl`), and [NDJSON](https://github.com/ndjson/ndjson-spec) (`application/x-ndjson`) are all in this category.
 Note that the media types for JSON Lines and NDJSON are not registered with the IANA, but are in common use.
 
 The following example shows Media Type Objects for both streaming log entries and returning a fixed-length set in response to a query.
@@ -5118,14 +5118,14 @@ This will expand to the result:
 ## Appendix D: Serializing Headers and Cookies
 
 HTTP headers have inconsistent rules regarding what characters are allowed, and how some or all disallowed characters can be escaped and included.
-While the `quoted-string` ABNF rule given in [[RFC7230]] [Section 3.2.6](https://httpwg.org/specs/rfc7230.html#field.components) is the most common escaping solution, it is not sufficiently universal to apply automatically.
+While the `quoted-string` ABNF rule given in [[RFC9110]] [Section 5.6.4](https://www.rfc-editor.org/rfc/rfc9110.html#section-5.6.4) is the most common escaping solution, it is not sufficiently universal to apply automatically.
 For example, a strong `ETag` looks like `"foo"` (with quotes, regardless of the contents), and a weak `ETag` looks like `W/"foo"` (note that only part of the value is quoted); the contents of the quotes for this header are also not escaped in the way `quoted-string` contents are.
 
 For this reason, any data being passed to a header by way of a [Parameter](#parameter-object) or [Header](#header-object) Object needs to be quoted and escaped prior to passing it to the OAS implementation, and the parsed header values are expected to contain the quotes and escapes.
 
 ### Percent-Encoding and Cookies
 
-[RFC6570](https://www.rfc-editor.org/rfc/rfc6570)'s percent-encoding behavior is not always appropriate for `in: "cookie"` parameters.
+[[RFC6570]] percent-encoding behavior is not always appropriate for `in: "cookie"` parameters.
 While percent-encoding seems more common as an escaping mechanism than the base64 encoding (`contentEncoding`: "base64") recommended by [[RFC6265]], [section 5.6 of draft-ietf-httpbis-rfc6265bis-20](https://www.ietf.org/archive/id/draft-ietf-httpbis-rfc6265bis-20.html#section-5.6), the proposed update to that RFC notes that cookies sent in the `Set-Cookie` response header that appear to be percent-encoded MUST NOT be decoded when stored by the client, which would mean that they are already encoded when retrieved from that storage for use in the `Cookie` request header.
 The behavior of `style: "cookie"` assumes this usage, and _does not_ apply or remove percent-encoding.
 
@@ -5170,7 +5170,7 @@ This means that while these three characters are reserved-but-allowed in query s
 
 ### Percent-Encoding and `form-data`
 
-[RFC7578](https://datatracker.ietf.org/doc/html/rfc7578#section-2) suggests RFC3986-based percent-encoding as a mechanism to keep text-based per-part header data such as file names within the ASCII character set.
+[[RFC7578]] [Section 2](https://datatracker.ietf.org/doc/html/rfc7578#section-2) suggests RFC3986-based percent-encoding as a mechanism to keep text-based per-part header data such as file names within the ASCII character set.
 This suggestion was not part of older (pre-2015) specifications for `form-data`, so care must be taken to ensure interoperability.
 Users wishing to use percent-encoding in this way MUST provide the data in percent-encoded form, as percent-encoding is not automatically applied for this media type regardless of which Encoding Object fields are used.
 
@@ -5186,9 +5186,9 @@ This specification normatively cites the following relevant standards:
 
 | Specification | Date | OAS Usage | Percent-Encoding | Notes |
 | ---- | ---- | ---- | ---- | ---- |
-| [RFC3986](https://www.rfc-editor.org/rfc/rfc3986) | 01/2005 | URI/URL syntax, including non-`form-urlencoded` content-based serialization | [[RFC3986]] | obsoletes [[?RFC1738]], [[?RFC2396]] |
-| [RFC6570](https://www.rfc-editor.org/rfc/rfc6570) | 03/2012 | style-based serialization | [[RFC3986]] | does not use `+` for query strings |
-| [WHATWG-URL Section 5](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) | "living" standard | content-based `form/url-encoded` serialization, including HTTP message contents | [WHATWG-URL Section 1.3](https://url.spec.whatwg.org/#application-x-www-form-urlencoded-percent-encode-set) | obsoletes [[?RFC1866]], [[?HTML401]] |
+| [[RFC3986]] | 01/2005 | URI/URL syntax, including non-`form-urlencoded` content-based serialization | [[RFC3986]] | obsoletes [[?RFC1738]], [[?RFC2396]] |
+| [[RFC6570]] | 03/2012 | style-based serialization | [[RFC3986]] | does not use `+` for query strings |
+| [[WHATWG-URL]] [Section 5](https://url.spec.whatwg.org/#application/x-www-form-urlencoded) | "living" standard | content-based `form/url-encoded` serialization, including HTTP message contents | [[WHATWG-URL]] [Section 1.3](https://url.spec.whatwg.org/#application-x-www-form-urlencoded-percent-encode-set) | obsoletes [[?RFC1866]], [[?HTML401]] |
 
 Style-based serialization with percent-encoding is used in the [Parameter Object](#parameter-object) when `schema` is present, and in the [Encoding Object](#encoding-object) when at least one of `style`, `explode`, or `allowReserved` is present.
 See [Appendix C](#appendix-c-using-rfc6570-based-serialization) for more details of RFC6570's two different approaches to percent-encoding, including an example involving `+`.
