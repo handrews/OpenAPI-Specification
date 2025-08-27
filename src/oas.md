@@ -125,9 +125,10 @@ It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or 
 
 ##### Parsing Documents
 
-In order to properly handle [Schema Objects](#schema-object), OAS 3.1 inherits the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
+Each OpenAPI Document in an OAD MUST be fully parsed in order to locate possible reference targets, including the OpenAPI Object's [`$self`](#oas-self) field and the [Schema Object's](#schema-object) `$id`, `$anchor`, and `$dynamicAnchor` keyword.
+This includes the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
+Implementations MUST NOT treat a reference as unresolvable before completely parsing all Documents provided to the implementation as possible parts of the OAD.
 
-This includes a requirement to parse complete documents before deeming a reference to be unresolvable, in order to detect keywords that might provide the reference target or impact the determination of the appropriate base URI.
 See [Appendix H: Parsing and Resolution Guidance](#appendix-h-parsing-and-resolution-guidance) for more detailed implementation options and a discussion of the consequences of parsing fragmentary OAD content (documents without an OpenAPI Object at the root, or a fragment extracted from a document without considering the rest of the document) in isolation.
 
 A special case of parsing fragments of OAD content would be if such fragments are embedded in another format, referred to as an _embedding format_ with respect to the OAS.
@@ -136,13 +137,13 @@ It is the responsibility of an embedding format to define how to parse embedded 
 
 ##### Relative References in API Description URIs
 
-URIs used as references within an OpenAPI Description, or to external documentation or other supplementary information such as a license, are resolved as _identifiers_, and described by this specification as **_URIs_**.
-As noted under [Parsing Documents](#parsing-documents), this specification inherits JSON Schema Specification Draft 2020-12's requirements for [loading documents](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9) and associating them with their expected URIs, which might not match their current location.
-This feature is used both for working in development or test environments without having to change the URIs, and for working within restrictive network configurations or security policies.
-
+URIs used as references within an OpenAPI Description, or to external documentation or other supplementary information such as a license, are resolved as _identifiers_, and described by this specification as **_URIs_**, in contrast with [API URLs](#relative-references-in-api-urls).
 Note that some URI fields are named `url` for historical reasons, but the descriptive text for those fields uses the correct "URI" terminology.
 
-Unless specified otherwise, all fields that are URIs MAY be relative references as defined by [RFC3986](https://tools.ietf.org/html/rfc3986#section-4.2).
+As noted under [Parsing Documents](#parsing-documents), several fields can be used to associate an OpenAPI Document or a Schema Object with a URI, which might not match the Document or schema's location.
+This allows the same references to be used in different deployment environments, including local filesystems or networks restricted by security policies or connectivity limitations.
+
+Unless specified otherwise, all fields that are URIs MAY be relative references as defined by [[RFC3986]] [Section 4.2](https://tools.ietf.org/html/rfc3986#section-4.2).
 
 ###### Establishing the Base URI
 
@@ -153,7 +154,7 @@ If `$self` is a relative URI-reference, it is resolved against the next possible
 The most common base URI source that is used in the event of a missing or relative `$self` (in the [OpenAPI Object](#openapi-object)) and (for [Schema Object](#schema-object)) `$id` is the retrieval URI.
 Implementations MAY support document retrieval, although see the [Security Considerations](#security-considerations) sections for additional guidance.
 Even if retrieval is supported, it may be impossible due to network configuration or server unavailability (including the server hosting an older version while a new version is in development), or undesirable due to performance impacts.
-Therefore, all implementations SHOULD allow users to provide the intended retrieval URI for each document so that references can be resolved as if retrievals were performed.
+Therefore, all implementations SHOULD allow users to provide documents with their intended retrieval URIs so that references can be resolved as if retrievals were performed.
 
 ###### Resolving URI fragments
 
