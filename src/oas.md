@@ -92,6 +92,8 @@ This is the root object of the [OpenAPI Description](#openapi-description-struct
 
 #### Fixed Fields
 
+In addition to the required fields, at least one of the `components`, `paths`, or `webhooks` fields MUST be present.
+
 | Field Name | Type | Description |
 | ---- | :----: | ---- |
 | <a name="oas-version"></a>openapi | `string` | **REQUIRED**. This string MUST be the [version number](#versions) of the OpenAPI Specification that the OpenAPI Document uses. The `openapi` field SHOULD be used by tooling to interpret the OpenAPI Document. This is _not_ related to the API [`info.version`](#info-version) string. |
@@ -113,15 +115,19 @@ Implementations MAY choose to support referencing by other URIs such as the retr
 
 #### OpenAPI Description Structure
 
-An **OpenAPI Description** (**OAD**) formally describes the surface of an API and its semantics. It is composed of an [entry document](#openapi-description-structure), which must be an OpenAPI Document, and any/all of its referenced documents. An OAD uses and conforms to the OpenAPI Specification, and MUST contain at least one [paths](#paths-object) field, [components](#oas-components) field, or [webhooks](#oas-webhooks) field.
+An **OpenAPI Description** (**OAD**) formally describes the surface of an API and its semantics. 
+An **OpenAPI Document** is a single JSON or YAML document that conforms to the OpenAPI Specification by having an OpenAPI Object with its required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
 
-An **OpenAPI Document** is a single JSON or YAML document that conforms to the OpenAPI Specification. An OpenAPI Document compatible with OAS 3.\*.\* contains a required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
+An OpenAPI Description MAY be made up of a single JSON or YAML OpenAPI Document  or be divided into multiple, connected parts at the discretion of the author.
+When all documents in an OAD are OpenAPI Documents, the parsing-behavior is well-defined.
 
-An OpenAPI Description MAY be made up of a single JSON or YAML OpenAPI Document  or be divided into multiple, connected parts at the discretion of the author. In the latter case, [Reference Object](#reference-object), [Path Item Object](#path-item-object) and [Schema Object](#schema-object) `$ref` fields, as well as the [Link Object](#link-object) `operationRef` field, and the URI form of the [Discriminator Object](#discriminator-object) `mapping` field, are used to identify the referenced elements.
+In the latter case, [Reference Object](#reference-object), [Path Item Object](#path-item-object) and [Schema Object](#schema-object) `$ref` fields, as well as the [Link Object](#link-object) `operationRef` field, and the URI form of the [Discriminator Object](#discriminator-object) `mapping` field, are used to identify the referenced elements.
 
 In a multi-document OAD, the document containing the OpenAPI Object where parsing begins is known as that OAD's **entry document**.
 
 It is RECOMMENDED that the entry document of an OAD be named: `openapi.json` or `openapi.yaml`.
+
+If some referenced (non-entry) documents have an Object other than an OpenAPI Object as its root, or containes additional non-OpenAPI content, the resulting behavior can be implementation-defined or undefined; see [Appendix G: Parsing and Resolution Guidance](#appendix-g-parsing-and-resolution-guidance) for details.
 
 ##### Parsing Documents
 
