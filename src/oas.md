@@ -114,11 +114,10 @@ Implementations MAY choose to support referencing by other URIs such as the retr
 #### OpenAPI Description Structure
 
 An **OpenAPI Description** (**OAD**) formally describes the surface of an API and its semantics.
+An OAD MAY be made up of a document, or be distributed across multiple documents that are connected by varoius fields using [URI references](#relative-references-in-api-description-uris) and [implicit connections](#resolving implicit connections).
 
-An **OpenAPI Document** is a single JSON or YAML document that conforms to the OpenAPI Specification by having an OpenAPI Object with its required [`openapi`](#oas-version) field which designates the version of the OAS that it uses.
-
-An OpenAPI Description MAY be made up of a single JSON or YAML OpenAPI Document  or be divided into multiple, connected parts at the discretion of the author.
-In the latter case, [Reference Object](#reference-object), [Path Item Object](#path-item-object) and [Schema Object](#schema-object) `$ref` fields, as well as the [Link Object](#link-object) `operationRef` field, and the URI form of the [Discriminator Object](#discriminator-object) `mapping` field, are used to identify the referenced elements.
+In order for parsing behavior to be well-defined, all documents in an OAD MUST have either an OpenAPI Object or a Schema Object at the root, and MUST be parsed as complete documents, as described in the next section.
+Documents with a different Object at the root, or that mix OAD content with other content, MAY be supported, but will have implementation-defined or, potentially, undefined behavior as described in [Appendix G: Parsing and Resolution Guidance](#appendix-g-parsing-and-resolution-guidance).
 
 In a multi-document OAD, the document containing the OpenAPI Object where parsing begins is known as that OAD's **entry document**.
 It is RECOMMENDED that the entry document of an OAD be named `openapi.json` or `openapi.yaml`.
@@ -130,9 +129,7 @@ This includes the parsing requirements of [JSON Schema Specification Draft 2020-
 
 Implementations MUST NOT treat a reference as unresolvable before completely parsing all Documents provided to the implementation as possible parts of the OAD.
 
-When all documents in an OAD are OpenAPI Documents, each of which is parsed as a complete document, the parsing-behavior is well-defined.
-
-If some referenced (non-entry) documents have an Object other than an OpenAPI Object as its root, or containes additional non-OpenAPI content, or if only the referenced part of the document is parsed, the resulting behavior can be implementation-defined or undefined; see [Appendix G: Parsing and Resolution Guidance](#appendix-g-parsing-and-resolution-guidance) for details.
+If only the referenced part of the document is parsed when resolving a reference, the resulting behavior can be implementation-defined or undefined; see [Appendix G: Parsing and Resolution Guidance](#appendix-g-parsing-and-resolution-guidance) for details.
 
 A special case of parsing fragments of OAD content would be if such fragments are embedded in another format, referred to as an _embedding format_ with respect to the OAS.
 Note that the OAS itself is an embedding format with respect to JSON Schema, which is embedded as Schema Objects.
