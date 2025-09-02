@@ -127,12 +127,12 @@ It is the responsibility of an embedding format to define how to parse embedded 
 
 ##### Parsing Documents
 
-Each document in an OAD MUST be fully parsed in order to locate possible reference targets, including the OpenAPI Object's [`$self`](#oas-self) field and the [Schema Object's](#schema-object) `$id`, `$anchor`, and `$dynamicAnchor` keyword.
+Each document in an OAD MUST be fully parsed in order to locate possible reference targets, including the OpenAPI Object's [`$self`](#oas-self) field and the [Schema Object's](#schema-object) `$id`, `$anchor`, and `$dynamicAnchor` keywords.
 This includes the parsing requirements of [JSON Schema Specification Draft 2020-12](https://www.ietf.org/archive/id/draft-bhutton-json-schema-01.html#section-9), with appropriate modifications regarding base URIs as specified in [Relative References In URIs](#relative-references-in-api-description-uris).
 
 Implementations MUST NOT treat a reference as unresolvable before completely parsing all documents provided to the implementation as possible parts of the OAD.
 
-If only the referenced part of the document is parsed when resolving a reference, the resulting behavior can be implementation-defined or undefined; see [Appendix G: Parsing and Resolution Guidance](#appendix-g-parsing-and-resolution-guidance) for details.
+If only the referenced part of the document is parsed when resolving a reference, the resulting behavior can be implementation-defined or undefined; see [Warnings Regarding Fragmentary Parsing](#warnings-regarding-fragmentary-parsing) in [Appendix G](#appendix-g-parsing-and-resolution-guidance) for details.
 
 ##### Relative References in API Description URIs
 
@@ -5453,6 +5453,9 @@ Implementations MAY support complete-document parsing in any of the following wa
 * Detecting OpenAPI or JSON Schema documents using media types
 * Detecting OpenAPI documents through the root `openapi` field
 * Detecting JSON Schema documents through detecting keywords or otherwise successfully parsing the document in accordance with the JSON Schema specification
+
+Additional mechanisms can be used to support documents with Objects other than an OpenAPI Object or a Schema Object at the root, but note that the resulting behavior is implementation-defined:
+
 * Detecting a document containing a referenceable Object at its root based on the expected type of the reference
 * Allowing users to configure the type of documents that might be loaded due to a reference to a non-root Object
 
