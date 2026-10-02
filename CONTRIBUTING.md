@@ -209,7 +209,7 @@ Before creating a pull request or marking a draft pull request as ready for revi
    | `yarn validate-markdown` | markdownlint + link check only — fast loop while editing |
    | `yarn format-markdown` | auto-fix markdownlint violations |
    | `yarn build-src` | full check: validation, HTML build, schema publish |
-   | `yarn test` | runs the JSON Schema test suite on development branches |
+   | `yarn test` | runs repository schema tests and an installed build-infra smoke test |
 
 5. After `yarn build-src`, open output file `deploy-preview/oas.html` with a browser and check your changes
 
